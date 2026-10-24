@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Black Han Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  background: #0a1230;
+  color: #fff;
+  font-family: var(--font-sans);
+  overscroll-behavior: none;
+}
+
+/* festive navy game-show backdrop */
+.stage {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(99, 102, 241, 0.35), transparent 60%),
+    radial-gradient(ellipse at 10% 110%, rgba(251, 58, 93, 0.18), transparent 50%),
+    radial-gradient(ellipse at 90% 110%, rgba(251, 191, 36, 0.14), transparent 50%),
+    #0a1230;
+}
+.stage-gold {
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(251, 191, 36, 0.45), transparent 65%),
+    #2a1d05;
+  transition: background 0.4s ease;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 font-black transition select-none
+    active:translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-35;
+}
+.btn-green { @apply bg-emerald-500 text-white shadow-[0_5px_0_#047857] hover:bg-emerald-400; }
+.btn-red { @apply bg-rose-500 text-white shadow-[0_5px_0_#9f1239] hover:bg-rose-400; }
+.btn-amber { @apply bg-amber-400 text-amber-950 shadow-[0_5px_0_#b45309] hover:bg-amber-300; }
+.btn-blue { @apply bg-indigo-500 text-white shadow-[0_5px_0_#3730a3] hover:bg-indigo-400; }
+.btn-ghost { @apply bg-white/10 text-white hover:bg-white/15; }
+.btn kbd {
+  @apply rounded-md bg-black/20 px-1.5 text-xs font-bold opacity-70;
+}
+
+/* ARMED buzzer pulse */
+@keyframes buzzer-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.04); filter: brightness(1.12); }
+}
+.buzzer-armed { animation: buzzer-pulse 1s ease-in-out infinite; }
+.buzzer-armed:active { animation: none; transform: translateY(8px) scale(0.98); }
+.buzzer-text-pulse { animation: buzzer-pulse 1s ease-in-out infinite; }
+
+@keyframes winner-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.winner-pop { animation: winner-pop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--drift), 110vh, 0) rotate(720deg); opacity: 0.9; }
+}
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.25, 0.4, 0.6, 1);
+  animation-fill-mode: both;
+}
+
+/* full-screen flashes — the visual fallback when audio is blocked */
+@keyframes flash { from { opacity: 0.7; } to { opacity: 0; } }
+.flash-winner { background: radial-gradient(circle, rgba(251, 191, 36, 0.8), transparent 70%); animation: flash 0.45s ease-out both; }
+.flash-armed { background: radial-gradient(circle, rgba(251, 58, 93, 0.6), transparent 70%); animation: flash 0.45s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .buzzer-armed, .buzzer-text-pulse { animation-duration: 2.5s; }
+  .confetti-piece { display: none; }
+}

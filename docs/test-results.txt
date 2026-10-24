@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /Users/allsense/Projects/Play/buzzer
+
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > WAITING / READY are not pressable 1ms
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > ARMED is pressable exactly once per arming 0ms
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > excluded (cancelled winner) cannot press 0ms
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > winner screens use only server-confirmed winner fields 0ms
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > disconnected disables the buzzer even when armed 0ms
+ ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > locked without winner, ended room, loading 0ms
+ ✓ |unit| tests/unit/participantView.test.ts > nickname helpers > counts code points like Postgres char_length 0ms
+ ✓ |unit| tests/unit/csv.test.ts > roundsToCsv > sorts by round, includes BOM, reaction time and escapes 8ms
+ ✓ |db| tests/db/buzzer.test.ts > 1. 20 participants join concurrently > all 20 get unique ids and tokens; only hashes are stored 223ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > rejects a duplicate nickname (case-insensitive, trimmed) 1ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > exactly one of 8 simultaneous joins with the same nickname succeeds 96ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > validates length and empty nicknames 26ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > a kicked participant frees the nickname 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > 10 phones buzzing at once => exactly one winner 130ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > stress: 40 rounds x 20 phones (each double-tapping) => one winner per round 521ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > winner holding its row lock (slow commit) still produces a single winner 2599ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > DB constraint rejects a second accepted attempt even if logic were bypassed 10ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > records a single attempt and returns the same outcome every time 95ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > a loser tapping repeatedly stays LOST (network retries are safe) 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > WAITING and READY reject without recording anything 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > host lock with no winner => LOCKED, and re-arming works 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > late presses are LOST and cannot change the winner 3ms
+ ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > host cannot re-arm a round that has a winner 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a buzz carrying the old round_id never affects the new round 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > race: buzzes on old round fired concurrently with NEXT+ARM 865ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a stale admin screen (double-click NEXT) cannot skip a round 1ms
+ ✓ |db| tests/db/buzzer.test.ts > 8/9. Refresh and network switch (token based restore) > participant_sync restores identity and round state from a fresh connection 15ms
+ ✓ |db| tests/db/buzzer.test.ts > 10. Admin refresh > admin session token survives a reload and returns full state 16ms
+ ✓ |db| tests/db/buzzer.test.ts > Host tools > cancel win: winner removed, round can be re-armed, cancelled winner excluded 3ms
+ ✓ |db| tests/db/buzzer.test.ts > Host tools > announce, end game, reset, test bots 7ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > forged / missing participant tokens are rejected 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > a participant token cannot buzz in another room 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > every admin RPC rejects forged, participant and missing tokens 411ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > wrong password fails and brute force is throttled 474ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > expired admin sessions and logout are enforced 197ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > anon cannot touch tables or private functions directly (RLS + grants) 117ms
+
+ Test Files  3 passed (3)
+      Tests  36 passed (36)
+   Start at  23:01:23
+   Duration  6.54s (tests 100%)
+
