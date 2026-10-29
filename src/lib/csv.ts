@@ -1,4 +1,4 @@
-import type { Round } from './types';
+import type { Round, SyncTeamResult } from './types';
 
 function cell(v: unknown) {
   const s = v == null ? '' : String(v);
@@ -17,6 +17,20 @@ export function roundsToCsv(rounds: Round[]) {
     });
   // BOM so Excel opens Korean text correctly
   return '﻿' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
+}
+
+const SYNC_STATUS: Record<SyncTeamResult['status'], string> = { COMPLETE: '완료', PARTIAL: '미완료', NONE: '미참여' };
+
+/** FAMILY SYNC results of one round. Times are server-receipt based (see README). */
+export function syncResultsToCsv(roundNumber: number, results: SyncTeamResult[]) {
+  const header = ['라운드', '순위', '가족 닉네임', '참가자1', '기록1(ms)', '참가자2', '기록2(ms)', '시간 차이(ms)', '상태'];
+  const rows = results.map((t) => [
+    roundNumber, t.rank ?? '', t.team_name,
+    t.members[0]?.label ?? '', t.members[0]?.elapsed_ms ?? '',
+    t.members[1]?.label ?? '', t.members[1]?.elapsed_ms ?? '',
+    t.gap_ms ?? '', SYNC_STATUS[t.status],
+  ]);
+  return '\uFEFF' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
 }
 
 export function downloadCsv(filename: string, csv: string) {

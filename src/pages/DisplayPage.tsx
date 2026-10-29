@@ -9,6 +9,7 @@ import { useWakeLock } from '../hooks/useWakeLock';
 import { sfx, unlockAudio } from '../lib/sound';
 import { errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
 import type { PublicState } from '../lib/types';
+import { SyncDisplay } from './SyncDisplay';
 
 /** Read-only big-screen view. Needs no credentials at all. */
 export function DisplayPage() {
@@ -50,6 +51,8 @@ export function DisplayPage() {
 
   if (!code) return <main className="stage flex min-h-dvh items-center justify-center text-3xl text-white/70">진행 중인 퀴즈방이 없습니다</main>;
   if (!s) return <main className="stage flex min-h-dvh items-center justify-center text-3xl text-white/70">{live.error ? errorMessage(live.error) : '불러오는 중…'}</main>;
+
+  if (s.room.mode === 'SYNC') return <SyncDisplay code={s.room.room_code} />;
 
   const status = s.room.status === 'ENDED' ? 'ENDED' : round?.status;
   const headline =

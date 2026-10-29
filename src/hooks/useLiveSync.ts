@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { RpcError, supabase } from '../lib/supabase';
-import type { Room, Round } from '../lib/types';
+import type { Room, Round, SyncRound } from '../lib/types';
 
 export type RealtimeStatus = 'connecting' | 'live' | 'down';
+export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds';
 
 export interface LiveSyncOptions<T> {
   /** room uuid to subscribe to; null = don't subscribe yet */
@@ -11,7 +12,7 @@ export interface LiveSyncOptions<T> {
   /** fetches authoritative state from the server */
   fetcher: () => Promise<T>;
   /** called for every realtime row change (before the debounced re-fetch) */
-  onChange?: (change: RealtimePostgresChangesPayload<Room | Round>, table: 'rooms' | 'rounds') => void;
+  onChange?: (change: RealtimePostgresChangesPayload<Room | Round | SyncRound>, table: LiveTable) => void;
   /** re-fetch period while realtime is healthy (safety net) */
   liveIntervalMs?: number;
   /** re-fetch period while realtime is down (polling fallback) */
@@ -33,7 +34,7 @@ const STALE_AFTER_MS = 20_000;
 
 /**
  * Keeps local state in sync with the server:
- *  - Supabase Realtime postgres_changes on rooms/rounds for instant updates
+ *  - Supabase Realtime postgres_changes on rooms/rounds/sync_rounds for instant updates
  *  - every change triggers a re-fetch so the UI always ends on server truth
  *  - periodic re-fetch (fast polling if realtime is down, slow otherwise)
  *  - re-subscribe with backoff, and re-sync on tab focus / network change
@@ -118,6 +119,11 @@ export function useLiveSync<T>({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rounds', filter: `room_id=eq.${roomId}` },
         (p) => {
           onChangeRef.current?.(p as RealtimePostgresChangesPayload<Round>, 'rounds');
+          scheduleRefresh();
+        })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sync_rounds', filter: `room_id=eq.${roomId}` },
+        (p) => {
+          onChangeRef.current?.(p as RealtimePostgresChangesPayload<SyncRound>, 'sync_rounds');
           scheduleRefresh();
         })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },

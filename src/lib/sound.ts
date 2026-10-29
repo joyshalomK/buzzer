@@ -138,6 +138,21 @@ export const sfx = {
       tone({ type: 'square', freq: 660, dur: 0.09, gain: 0.25 });
       tone({ type: 'square', freq: 990, start: 0.12, dur: 0.16, gain: 0.25 });
     }),
+  /** Countdown beep (3, 2, 1). */
+  tick: () => play(() => tone({ type: 'sine', freq: 740, dur: 0.12, gain: 0.3 })),
+  /** Soft confirmation after a sync press. */
+  tap: () =>
+    play(() => {
+      tone({ type: 'triangle', freq: 523.25, dur: 0.1, gain: 0.35 });
+      tone({ type: 'triangle', freq: 784, start: 0.08, dur: 0.18, gain: 0.3 });
+    }),
+  /** Drum-roll-ish sting when a rank is revealed. */
+  reveal: () =>
+    play(() => {
+      for (let i = 0; i < 8; i++) tone({ type: 'triangle', freq: 180 + i * 6, start: i * 0.045, dur: 0.05, gain: 0.25 });
+      tone({ type: 'triangle', freq: 659.25, start: 0.38, dur: 0.3, gain: 0.35 });
+      tone({ type: 'sine', freq: 987.77, start: 0.38, dur: 0.3, gain: 0.2 });
+    }),
 };
 
 export function vibrate(pattern: number | number[]) {

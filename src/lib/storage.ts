@@ -19,6 +19,7 @@ export function save(key: string, value: unknown) {
 
 export const KEYS = {
   session: 'fmquiz.session',
+  syncSession: 'fmquiz.sync.session',
   admin: 'fmquiz.admin',
   adminRoom: 'fmquiz.admin.room',
   muted: 'fmquiz.muted',

@@ -8,38 +8,72 @@
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > disconnected disables the buzzer even when armed 0ms
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > locked without winner, ended room, loading 0ms
  ✓ |unit| tests/unit/participantView.test.ts > nickname helpers > counts code points like Postgres char_length 0ms
- ✓ |unit| tests/unit/csv.test.ts > roundsToCsv > sorts by round, includes BOM, reaction time and escapes 8ms
- ✓ |db| tests/db/buzzer.test.ts > 1. 20 participants join concurrently > all 20 get unique ids and tokens; only hashes are stored 223ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > waiting room: partner missing vs. both connected 1ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > counts down to the server GO instant, then enables the button for the window only 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > shows no remaining-time number while the game runs 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > locks after my press (local or server-confirmed) 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > a press is still possible while the badge says disconnected (the request may get through) 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > rematch: teams not in the list only watch 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > deriveSyncView > after the window: tallying, then results 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > tieGroups > finds teams sharing a rank, ignoring unranked teams 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > ServerClock > uses the midpoint of the fastest round trip 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > ServerClock > ignores invalid samples 0ms
+ ✓ |unit| tests/unit/syncView.test.ts > syncResultsToCsv > writes one row per team with both records and the gap 0ms
+ ✓ |unit| tests/unit/csv.test.ts > roundsToCsv > sorts by round, includes BOM, reaction time and escapes 9ms
+ ✓ |db| tests/db/buzzer.test.ts > 1. 20 participants join concurrently > all 20 get unique ids and tokens; only hashes are stored 216ms
  ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > rejects a duplicate nickname (case-insensitive, trimmed) 1ms
- ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > exactly one of 8 simultaneous joins with the same nickname succeeds 96ms
- ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > validates length and empty nicknames 26ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > exactly one of 8 simultaneous joins with the same nickname succeeds 95ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > validates length and empty nicknames 24ms
  ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > a kicked participant frees the nickname 2ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > 10 phones buzzing at once => exactly one winner 130ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > stress: 40 rounds x 20 phones (each double-tapping) => one winner per round 521ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > winner holding its row lock (slow commit) still produces a single winner 2599ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > DB constraint rejects a second accepted attempt even if logic were bypassed 10ms
- ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > records a single attempt and returns the same outcome every time 95ms
- ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > a loser tapping repeatedly stays LOST (network retries are safe) 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > 10 phones buzzing at once => exactly one winner 127ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > stress: 40 rounds x 20 phones (each double-tapping) => one winner per round 515ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > winner holding its row lock (slow commit) still produces a single winner 2605ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > DB constraint rejects a second accepted attempt even if logic were bypassed 15ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > records a single attempt and returns the same outcome every time 93ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > a loser tapping repeatedly stays LOST (network retries are safe) 3ms
  ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > WAITING and READY reject without recording anything 2ms
- ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > host lock with no winner => LOCKED, and re-arming works 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > host lock with no winner => LOCKED, and re-arming works 3ms
  ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > late presses are LOST and cannot change the winner 3ms
  ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > host cannot re-arm a round that has a winner 2ms
  ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a buzz carrying the old round_id never affects the new round 4ms
- ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > race: buzzes on old round fired concurrently with NEXT+ARM 865ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > race: buzzes on old round fired concurrently with NEXT+ARM 853ms
  ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a stale admin screen (double-click NEXT) cannot skip a round 1ms
- ✓ |db| tests/db/buzzer.test.ts > 8/9. Refresh and network switch (token based restore) > participant_sync restores identity and round state from a fresh connection 15ms
- ✓ |db| tests/db/buzzer.test.ts > 10. Admin refresh > admin session token survives a reload and returns full state 16ms
+ ✓ |db| tests/db/buzzer.test.ts > 8/9. Refresh and network switch (token based restore) > participant_sync restores identity and round state from a fresh connection 14ms
+ ✓ |db| tests/db/buzzer.test.ts > 10. Admin refresh > admin session token survives a reload and returns full state 14ms
  ✓ |db| tests/db/buzzer.test.ts > Host tools > cancel win: winner removed, round can be re-armed, cancelled winner excluded 3ms
- ✓ |db| tests/db/buzzer.test.ts > Host tools > announce, end game, reset, test bots 7ms
+ ✓ |db| tests/db/buzzer.test.ts > Host tools > announce, end game, reset, test bots 8ms
  ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > forged / missing participant tokens are rejected 2ms
  ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > a participant token cannot buzz in another room 2ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > every admin RPC rejects forged, participant and missing tokens 411ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > wrong password fails and brute force is throttled 474ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > expired admin sessions and logout are enforced 197ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > anon cannot touch tables or private functions directly (RLS + grants) 117ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > every admin RPC rejects forged, participant and missing tokens 391ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > wrong password fails and brute force is throttled 470ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > expired admin sessions and logout are enforced 192ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > anon cannot touch tables or private functions directly (RLS + grants) 115ms
+ ✓ |db| tests/db/sync.test.ts > S1. 10 teams / 20 phones > 20 concurrent joins form 10 full teams, 20 concurrent presses are all recorded and ranked 234ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > a third member is rejected 2ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > 6 simultaneous joins to one family => exactly 2 succeed 79ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > family names are case-insensitive; duplicate label in a team is rejected; input is validated 38ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > kicking a member frees the slot; leaving is blocked while a round runs 17ms
+ ✓ |db| tests/db/sync.test.ts > S3. Duplicate presses > the same participant pressing 5 times at once is recorded once 70ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press just before the deadline counts 4ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press after the deadline is rejected and not stored; the round auto-finishes 3ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press before the scheduled GO is rejected (not stored) and may be retried 2ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > presses are refused before START and after the host stops the round 3ms
+ ✓ |db| tests/db/sync.test.ts > S6. Incomplete teams > one press => PARTIAL (unranked), no press => NONE 4ms
+ ✓ |db| tests/db/sync.test.ts > S7. Network loss / reload > a retry after a lost response is DUPLICATE; state restores from the token 2ms
+ ✓ |db| tests/db/sync.test.ts > S7. Network loss / reload > a delayed request for a previous round is STALE_ROUND and never lands in the new one 3ms
+ ✓ |db| tests/db/sync.test.ts > S8. Ties > equal gaps share a rank (1,1,3), no hidden tie-break; rematch limits the next round to the tied teams 7ms
+ ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > nothing is public before the reveal; ranks open 5th -> 1st step by step 11ms
+ ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > the browser role cannot read teams, members or presses directly 33ms
+ ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > progress can be shown on the big screen when the host enables it 18ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > admin state is re-readable, double START is harmless, stale round ids are refused 26ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > every admin_sync RPC requires a valid admin session 78ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > sync reset removes teams and invalidates member tokens 16ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > test-mode bot families press through sync_buzz 22ms
+ ✓ |db| tests/db/sync.test.ts > S11. Compatibility with the quiz buzzer > modes and identities stay separate 11ms
+ ✓ |db| tests/db/sync.test.ts > S11. Compatibility with the quiz buzzer > whole-room reset clears both games 3ms
 
- Test Files  3 passed (3)
-      Tests  36 passed (36)
-   Start at  23:01:23
-   Duration  6.54s (tests 100%)
+ Test Files  5 passed (5)
+      Tests  70 passed (70)
+   Start at  23:54:27
+   Duration  7.32s (tests 99%)
 

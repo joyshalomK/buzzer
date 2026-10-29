@@ -8,7 +8,8 @@ import { downloadCsv, roundsToCsv } from '../lib/csv';
 import { sfx, unlockAudio } from '../lib/sound';
 import { KEYS, load, save } from '../lib/storage';
 import { RpcError, errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
-import type { AdminState, BuzzResponse, Room, Round, RoundStatus } from '../lib/types';
+import type { AdminState, BuzzResponse, Room, RoomMode, Round, RoundStatus } from '../lib/types';
+import { SyncAdminPanel } from './SyncAdminPanel';
 
 interface AdminSession {
   token: string;
@@ -303,14 +304,15 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
   // keyboard shortcuts for the host: R / A / L / N
   const actRef = useRef(act);
   actRef.current = act;
-  const flags = useRef({ canReady, canArm, canLock, open });
-  flags.current = { canReady, canArm, canLock, open };
+  const buzzerMode = room?.mode !== 'SYNC';
+  const flags = useRef({ canReady, canArm, canLock, open, buzzerMode });
+  flags.current = { canReady, canArm, canLock, open, buzzerMode };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return;
       const f = flags.current;
-      if (!f.open) return;
+      if (!f.open || !f.buzzerMode) return;
       const k = e.key.toLowerCase();
       if (k === 'r' && f.canReady) void actRef.current('READY');
       else if (k === 'a' && f.canArm) void actRef.current('ARM');
@@ -328,6 +330,18 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
   const onlineCount = realPeople.filter((p) => p.online).length;
   const winnerRounds = (state?.rounds ?? []).filter((r) => r.winner_nickname);
   const firstAttempt = state?.attempts.find((a) => round && a.arm_seq === round.arm_seq);
+
+  const notify = useCallback((text: string, tone: 'error' | 'info') => setToast({ text, tone }), []);
+
+  const switchMode = (mode: RoomMode) => {
+    if (!room || room.mode === mode) return;
+    const label = mode === 'SYNC' ? 'FAMILY SYNC MODE' : '일반 퀴즈 부저';
+    if (!window.confirm(`${label}로 전환할까요?\n참가자 화면이 바로 바뀝니다. (각 모드의 참가자·기록은 그대로 유지됩니다)`)) return;
+    void run('MODE', async () => {
+      const r = await rpc<Room>('admin_set_mode', { p_admin_token: token, p_room_id: room.id, p_mode: mode });
+      live.setData((d) => (d ? { ...d, room: r } : d));
+    });
+  };
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen();
@@ -354,7 +368,7 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
           </p>
           <p className="mt-1 truncate text-sm text-white/50">{joinUrl}</p>
         </div>
-        <div className="text-center">
+        <div className={`text-center ${buzzerMode ? '' : 'hidden'}`}>
           <p className="text-sm text-white/60">참가자</p>
           <p className="font-display text-5xl text-white">{realPeople.length}</p>
           <p className="text-xs text-emerald-300">접속 {onlineCount}명</p>
@@ -377,6 +391,26 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
         </p>
       )}
 
+      {/* ---------- game mode ---------- */}
+      <section className="mt-4 flex flex-wrap items-center gap-3 rounded-3xl bg-white/5 p-3 ring-1 ring-white/10">
+        <span className="px-2 font-bold text-white/70">게임 모드</span>
+        <div className="flex rounded-2xl bg-black/20 p-1">
+          {([['BUZZER', '일반 퀴즈 부저'], ['SYNC', 'FAMILY SYNC MODE']] as const).map(([m, label]) => (
+            <button
+              key={m}
+              disabled={!open || !!busy}
+              onClick={() => switchMode(m)}
+              className={`rounded-xl px-4 py-2 font-black transition ${room.mode === m ? (m === 'SYNC' ? 'bg-cyan-500 text-white' : 'bg-amber-400 text-amber-950') : 'text-white/60 hover:bg-white/10'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {!buzzerMode && <SyncAdminPanel token={token} room={room} onAuthError={onLogout} notify={notify} />}
+
+      {buzzerMode && (<>
       {/* ---------- stage ---------- */}
       <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_22rem]">
         <div className={`relative flex min-h-[22rem] flex-col items-center justify-center rounded-3xl p-6 text-center ring-1
@@ -462,38 +496,6 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
         </div>
       </section>
 
-      {/* ---------- announcement ---------- */}
-      <section className="mt-4 rounded-3xl bg-white/5 p-4 ring-1 ring-white/10">
-        <form
-          className="flex flex-wrap gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run('ANNOUNCE', async () => {
-              await rpc('admin_announce', { p_admin_token: token, p_room_id: room.id, p_text: announcement });
-              setAnnouncement('');
-            });
-          }}
-        >
-          <input
-            value={announcement}
-            onChange={(e) => setAnnouncement(e.target.value.slice(0, 200))}
-            placeholder="전체 공지 (예: 5분 뒤 2부가 시작됩니다!)"
-            className="min-w-0 flex-1 rounded-xl border-2 border-white/15 bg-white/10 px-4 py-2.5 text-white outline-none focus:border-amber-300"
-          />
-          <button disabled={!announcement.trim() || !!busy} className="btn btn-amber">공지 보내기</button>
-          {room.announcement && (
-            <button
-              type="button"
-              onClick={() => run('ANNOUNCE', () => rpc('admin_announce', { p_admin_token: token, p_room_id: room.id, p_text: '' }))}
-              className="btn btn-ghost"
-            >
-              공지 내리기
-            </button>
-          )}
-        </form>
-        {room.announcement && <p className="mt-2 text-amber-100">현재 공지: 📢 {room.announcement}</p>}
-      </section>
-
       {/* ---------- lists ---------- */}
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="rounded-3xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -563,6 +565,40 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
         </div>
       </section>
 
+      </>)}
+
+      {/* ---------- announcement ---------- */}
+      <section className="mt-4 rounded-3xl bg-white/5 p-4 ring-1 ring-white/10">
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run('ANNOUNCE', async () => {
+              await rpc('admin_announce', { p_admin_token: token, p_room_id: room.id, p_text: announcement });
+              setAnnouncement('');
+            });
+          }}
+        >
+          <input
+            value={announcement}
+            onChange={(e) => setAnnouncement(e.target.value.slice(0, 200))}
+            placeholder="전체 공지 (예: 5분 뒤 2부가 시작됩니다!)"
+            className="min-w-0 flex-1 rounded-xl border-2 border-white/15 bg-white/10 px-4 py-2.5 text-white outline-none focus:border-amber-300"
+          />
+          <button disabled={!announcement.trim() || !!busy} className="btn btn-amber">공지 보내기</button>
+          {room.announcement && (
+            <button
+              type="button"
+              onClick={() => run('ANNOUNCE', () => rpc('admin_announce', { p_admin_token: token, p_room_id: room.id, p_text: '' }))}
+              className="btn btn-ghost"
+            >
+              공지 내리기
+            </button>
+          )}
+        </form>
+        {room.announcement && <p className="mt-2 text-amber-100">현재 공지: 📢 {room.announcement}</p>}
+      </section>
+
       {/* ---------- test mode & maintenance ---------- */}
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="rounded-3xl bg-violet-500/10 p-4 ring-1 ring-violet-400/30">
@@ -586,7 +622,10 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
           <p className="mt-1 text-sm text-white/60">
             가상 참가자(봇)를 만들어 실제 서버 판정 경로(buzz RPC)로 동시에 부저를 눌러 봅니다. 끄면 봇이 삭제됩니다.
           </p>
-          {room.test_mode && (
+          {room.test_mode && !buzzerMode && (
+            <p className="mt-3 text-sm font-bold text-violet-200">FAMILY SYNC 봇은 위쪽 'SYNC 테스트 봇'에서 추가합니다.</p>
+          )}
+          {room.test_mode && buzzerMode && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <input
                 type="number" min={1} max={30} value={botCount}
@@ -636,7 +675,7 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
               </button>
             </div>
           )}
-          {room.test_mode && bots.length === 0 && people.some((p) => p.is_test) && (
+          {room.test_mode && buzzerMode && bots.length === 0 && people.some((p) => p.is_test) && (
             <p className="mt-2 text-xs text-white/50">새로고침 전에 만든 봇은 토큰이 없어 부저를 누를 수 없습니다. 삭제 후 다시 추가하세요.</p>
           )}
           {botResult && <p className="mt-2 font-bold text-violet-200">{botResult}</p>}
@@ -662,7 +701,9 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
             <button onClick={onLeaveRoom} className="btn btn-ghost">다른 방 선택</button>
             <button onClick={onLogout} className="btn btn-ghost">로그아웃</button>
           </div>
-          <p className="mt-3 text-sm text-white/50">단축키: R 준비 · A 부저 활성화 · L 잠금 · N 다음 문제</p>
+          <p className="mt-3 text-sm text-white/50">
+            {buzzerMode ? '단축키: R 준비 · A 부저 활성화 · L 잠금 · N 다음 문제' : '참가자 전체 초기화는 부저 참가자와 FAMILY SYNC 팀을 모두 지웁니다.'}
+          </p>
         </div>
       </section>
 

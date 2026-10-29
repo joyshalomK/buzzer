@@ -4,7 +4,7 @@ import type { Room, Round } from '../../src/lib/types';
 
 const room: Room = {
   id: 'room', room_code: 'ABCD', status: 'OPEN', announcement: null, announcement_at: null,
-  test_mode: false, rev: 0, created_at: '',
+  test_mode: false, rev: 0, created_at: '', mode: 'BUZZER', sync_show_progress: false,
 };
 const round = (o: Partial<Round> = {}): Round => ({
   id: 'r1', room_id: 'room', round_number: 1, status: 'WAITING', arm_seq: 0, armed_at: null,

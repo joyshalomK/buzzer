@@ -11,7 +11,8 @@ import { clampNickname, deriveParticipantView, nicknameLength, pressKey } from '
 import { sfx, unlockAudio, vibrate } from '../lib/sound';
 import { KEYS, load, save } from '../lib/storage';
 import { RpcError, errorMessage, rpc } from '../lib/supabase';
-import type { BuzzResponse, ParticipantSession, ParticipantSync, Room, Round, SyncFailure } from '../lib/types';
+import type { BuzzResponse, ParticipantSession, ParticipantSync, Room, RoomMode, Round, SyncFailure, SyncSession } from '../lib/types';
+import { SyncPlayScreen } from './SyncPlayScreen';
 
 class SessionEnded extends Error {}
 
@@ -20,35 +21,57 @@ const LEAVE_MESSAGES: Record<string, string> = {
   INVALID_TOKEN: '참가 정보가 초기화되었습니다. 다시 입장해 주세요.',
 };
 
+const SYNC_LEAVE_MESSAGES: Record<string, string> = {
+  KICKED: '사회자가 팀에서 제외했습니다. 다시 가입하려면 사회자에게 문의해 주세요.',
+  INVALID_TOKEN: '팀 정보가 초기화되었습니다. 가족 닉네임으로 다시 가입해 주세요.',
+};
+
 export function ParticipantPage() {
   const { roomCode } = useParams();
   const [session, setSession] = useState<ParticipantSession | null>(() => load(KEYS.session, null));
+  const [syncSession, setSyncSession] = useState<SyncSession | null>(() => load(KEYS.syncSession, null));
+  // last room mode reported by whichever screen is showing; null = not known yet
+  const [mode, setMode] = useState<RoomMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const urlCode = roomCode?.toUpperCase();
-  const active = session && (!urlCode || session.room_code === urlCode) ? session : null;
+  const forRoom = <S extends { room_code: string }>(s: S | null) => (s && (!urlCode || s.room_code === urlCode) ? s : null);
+  const active = forRoom(session);
+  const activeSync = forRoom(syncSession);
+  const effectiveMode: RoomMode = mode ?? (activeSync && !active ? 'SYNC' : 'BUZZER');
 
-  if (!active) {
-    return (
-      <JoinForm
-        initialCode={urlCode}
-        notice={notice}
-        onJoined={(s) => {
-          save(KEYS.session, s);
-          setNotice(null);
-          setSession(s);
-        }}
-      />
-    );
+  const leaveBuzzer = useCallback((reason: string) => {
+    save(KEYS.session, null);
+    setSession(null);
+    setNotice(LEAVE_MESSAGES[reason] ?? null);
+  }, []);
+  const leaveSync = useCallback((reason: string) => {
+    save(KEYS.syncSession, null);
+    setSyncSession(null);
+    setNotice(SYNC_LEAVE_MESSAGES[reason] ?? null);
+  }, []);
+
+  if (effectiveMode === 'SYNC' && activeSync) {
+    return <SyncPlayScreen key={activeSync.token} session={activeSync} onLeave={leaveSync} onMode={setMode} />;
+  }
+  if (effectiveMode === 'BUZZER' && active) {
+    return <PlayScreen key={active.token} session={active} onLeave={leaveBuzzer} onMode={setMode} />;
   }
   return (
-    <PlayScreen
-      key={active.token}
-      session={active}
-      onLeave={(reason) => {
-        save(KEYS.session, null);
-        setSession(null);
-        setNotice(LEAVE_MESSAGES[reason] ?? null);
+    <JoinForm
+      initialCode={urlCode ?? activeSync?.room_code ?? active?.room_code}
+      mode={effectiveMode}
+      onMode={setMode}
+      notice={notice}
+      onJoined={(s) => {
+        save(KEYS.session, s);
+        setNotice(null);
+        setSession(s);
+      }}
+      onSyncJoined={(s) => {
+        save(KEYS.syncSession, s);
+        setNotice(null);
+        setSyncSession(s);
       }}
     />
   );
@@ -56,16 +79,22 @@ export function ParticipantPage() {
 
 // ---------------------------------------------------------------------------
 
-function JoinForm({ initialCode, notice, onJoined }: {
+function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }: {
   initialCode?: string;
+  mode: RoomMode;
+  onMode: (m: RoomMode) => void;
   notice: string | null;
   onJoined: (s: ParticipantSession) => void;
+  onSyncJoined: (s: SyncSession) => void;
 }) {
   const [code, setCode] = useState(initialCode ?? '');
   const [nickname, setNickname] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [label, setLabel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const sync = mode === 'SYNC';
 
   useEffect(() => {
     if (initialCode) return;
@@ -74,35 +103,75 @@ function JoinForm({ initialCode, notice, onJoined }: {
       .catch(() => {});
   }, [initialCode]);
 
+  // which game is the room playing? (the host may switch while this form is open)
+  useEffect(() => {
+    if (code.length < 4) return;
+    let stop = false;
+    const check = () =>
+      rpc<{ room: Room }>('get_public_state', { p_room_code: code })
+        .then((s) => !stop && onMode(s.room.mode))
+        .catch(() => {});
+    const t = window.setTimeout(check, 250);
+    const id = window.setInterval(check, 5000);
+    return () => {
+      stop = true;
+      window.clearTimeout(t);
+      window.clearInterval(id);
+    };
+  }, [code, onMode]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     unlockAudio(); // this tap is our user gesture for iOS audio
     if (busy) return;
-    const nick = nickname.trim();
-    if (!nick) return setError('닉네임을 입력해 주세요.');
     if (!code.trim()) return setError('방 코드를 입력해 주세요.');
+    if (sync) {
+      if (!teamName.trim()) return setError('가족 닉네임을 입력해 주세요.');
+      if (!label.trim()) return setError('이름 또는 호칭을 입력해 주세요.');
+    } else if (!nickname.trim()) return setError('닉네임을 입력해 주세요.');
     setBusy(true);
     setError(null);
     try {
-      const r = await rpc<{ participant_id: string; token: string; nickname: string; room_code: string }>('join_room', {
-        p_room_code: code.trim().toUpperCase(),
-        p_nickname: nick,
-      });
-      onJoined({ token: r.token, participant_id: r.participant_id, nickname: r.nickname, room_code: r.room_code });
-      navigate(`/room/${r.room_code}`, { replace: true });
+      if (sync) {
+        const r = await rpc<SyncSession & { participant_id: string }>('sync_join', {
+          p_room_code: code.trim().toUpperCase(),
+          p_team_name: teamName.trim(),
+          p_label: label.trim(),
+        });
+        onSyncJoined({ token: r.token, participant_id: r.participant_id, team_id: r.team_id, team_name: r.team_name, label: r.label, room_code: r.room_code });
+        navigate(`/room/${r.room_code}`, { replace: true });
+      } else {
+        const r = await rpc<{ participant_id: string; token: string; nickname: string; room_code: string }>('join_room', {
+          p_room_code: code.trim().toUpperCase(),
+          p_nickname: nickname.trim(),
+        });
+        onJoined({ token: r.token, participant_id: r.participant_id, nickname: r.nickname, room_code: r.room_code });
+        navigate(`/room/${r.room_code}`, { replace: true });
+      }
     } catch (err) {
+      if (err instanceof RpcError && err.code === 'NOT_SYNC_MODE') onMode('BUZZER');
       setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
   };
 
+  const field = 'w-full rounded-2xl border-2 border-white/15 bg-white/10 px-4 py-4 text-center text-2xl font-bold text-white outline-none focus:border-amber-300';
+
   return (
     <main className="stage flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
-        FM FAMILY<br /><span className="text-amber-300">QUIZ</span>
-      </h1>
-      <p className="mt-3 text-center text-lg text-white/70">닉네임을 쓰고 입장하세요!</p>
+      {sync ? (
+        <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
+          FAMILY<br /><span className="text-cyan-300">SYNC</span>
+        </h1>
+      ) : (
+        <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
+          FM FAMILY<br /><span className="text-amber-300">QUIZ</span>
+        </h1>
+      )}
+      <p className="mt-3 text-center text-lg text-white/70">
+        {sync ? '가족 2명이 같은 가족 닉네임으로 들어오세요!' : '닉네임을 쓰고 입장하세요!'}
+      </p>
 
       <form onSubmit={submit} className="mt-8 w-full max-w-sm space-y-5">
         {notice && <p className="rounded-2xl bg-amber-400/15 p-4 text-center font-bold text-amber-100">{notice}</p>}
@@ -118,27 +187,61 @@ function JoinForm({ initialCode, notice, onJoined }: {
             placeholder="ABCD"
           />
         </label>
-        <label className="block">
-          <span className="mb-1.5 flex justify-between text-base font-bold text-white/80">
-            <span>닉네임</span>
-            <span className="text-white/50">{nicknameLength(nickname)}/12</span>
-          </span>
-          <input
-            value={nickname}
-            onChange={(e) => setNickname(clampNickname(e.target.value))}
-            autoComplete="off"
-            enterKeyHint="go"
-            className="w-full rounded-2xl border-2 border-white/15 bg-white/10 px-4 py-4 text-center text-2xl font-bold text-white outline-none focus:border-amber-300"
-            placeholder="예) 슈퍼민수"
-          />
-        </label>
+        {sync ? (
+          <>
+            <label className="block">
+              <span className="mb-1.5 flex justify-between text-base font-bold text-white/80">
+                <span>가족 닉네임</span>
+                <span className="text-white/50">{nicknameLength(teamName)}/10</span>
+              </span>
+              <input
+                value={teamName}
+                onChange={(e) => setTeamName(clampNickname(e.target.value, 10))}
+                autoComplete="off"
+                className={field}
+                placeholder="예) 튼튼가족"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 flex justify-between text-base font-bold text-white/80">
+                <span>내 이름 또는 호칭</span>
+                <span className="text-white/50">{nicknameLength(label)}/8</span>
+              </span>
+              <input
+                value={label}
+                onChange={(e) => setLabel(clampNickname(e.target.value, 8))}
+                autoComplete="off"
+                enterKeyHint="go"
+                className={field}
+                placeholder="예) 아빠, 딸"
+              />
+            </label>
+            <p className="text-center text-sm text-white/55">파트너도 똑같은 가족 닉네임을 입력해야 한 팀이 됩니다.</p>
+          </>
+        ) : (
+          <label className="block">
+            <span className="mb-1.5 flex justify-between text-base font-bold text-white/80">
+              <span>닉네임</span>
+              <span className="text-white/50">{nicknameLength(nickname)}/12</span>
+            </span>
+            <input
+              value={nickname}
+              onChange={(e) => setNickname(clampNickname(e.target.value))}
+              autoComplete="off"
+              enterKeyHint="go"
+              className={field}
+              placeholder="예) 슈퍼민수"
+            />
+          </label>
+        )}
         {error && <p role="alert" className="text-center text-base font-bold text-rose-300">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-2xl bg-emerald-500 py-5 text-2xl font-black text-white shadow-[0_6px_0_#047857] transition active:translate-y-1 active:shadow-[0_2px_0_#047857] disabled:opacity-60"
+          className={`w-full rounded-2xl py-5 text-2xl font-black text-white transition active:translate-y-1 disabled:opacity-60
+            ${sync ? 'bg-sky-500 shadow-[0_6px_0_#075985] active:shadow-[0_2px_0_#075985]' : 'bg-emerald-500 shadow-[0_6px_0_#047857] active:shadow-[0_2px_0_#047857]'}`}
         >
-          {busy ? '입장 중…' : '입장하기'}
+          {busy ? '입장 중…' : sync ? '팀 가입하기' : '입장하기'}
         </button>
       </form>
     </main>
@@ -147,7 +250,11 @@ function JoinForm({ initialCode, notice, onJoined }: {
 
 // ---------------------------------------------------------------------------
 
-function PlayScreen({ session, onLeave }: { session: ParticipantSession; onLeave: (reason: string) => void }) {
+function PlayScreen({ session, onLeave, onMode }: {
+  session: ParticipantSession;
+  onLeave: (reason: string) => void;
+  onMode: (mode: RoomMode) => void;
+}) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [localPress, setLocalPress] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -168,7 +275,7 @@ function PlayScreen({ session, onLeave }: { session: ParticipantSession; onLeave
     fetcher,
     onChange: (change, table) => {
       const row = change.new as { id?: string };
-      if (!row?.id) return;
+      if (!row?.id || table === 'sync_rounds') return;
       // apply realtime rows immediately; the follow-up re-fetch confirms them
       live.setData((d) => {
         if (!d) return d;
@@ -194,6 +301,10 @@ function PlayScreen({ session, onLeave }: { session: ParticipantSession; onLeave
   useEffect(() => {
     if (live.error instanceof SessionEnded) onLeave(live.error.message);
   }, [live.error, onLeave]);
+
+  useEffect(() => {
+    if (data?.room.mode) onMode(data.room.mode);
+  }, [data?.room.mode, onMode]);
 
   const round = data?.round ?? null;
   const view = deriveParticipantView({

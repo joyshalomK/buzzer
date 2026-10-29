@@ -64,6 +64,18 @@ const MESSAGES: Record<string, string> = {
   INVALID_TRANSITION: '현재 상태에서는 할 수 없는 동작입니다.',
   TEST_MODE_OFF: '테스트 모드를 먼저 켜 주세요.',
   ANNOUNCEMENT_TOO_LONG: '공지는 200자 이내로 입력해 주세요.',
+  NOT_SYNC_MODE: '지금은 FAMILY SYNC 게임 시간이 아닙니다.',
+  TEAM_FULL: '이 가족 팀은 이미 2명이 모두 들어왔습니다. 가족 닉네임을 확인해 주세요.',
+  LABEL_TAKEN: '팀에 같은 이름이 이미 있습니다. 다른 이름(호칭)을 입력해 주세요.',
+  TEAM_NAME_REQUIRED: '가족 닉네임을 입력해 주세요.',
+  TEAM_NAME_TOO_LONG: '가족 닉네임은 10자 이내로 입력해 주세요.',
+  MEMBER_LABEL_REQUIRED: '이름 또는 호칭을 입력해 주세요.',
+  MEMBER_LABEL_TOO_LONG: '이름(호칭)은 8자 이내로 입력해 주세요.',
+  SYNC_RUNNING: '게임이 진행 중입니다. 끝난 뒤에 다시 시도해 주세요.',
+  GAME_IN_PROGRESS: '진행 중인 게임이 있습니다. 부저를 잠그거나 라운드를 끝낸 뒤 전환하세요.',
+  INVALID_MODE: '알 수 없는 게임 모드입니다.',
+  INVALID_TEAMS: '재경기 팀 선택이 올바르지 않습니다.',
+  INVALID_COUNT: '개수가 올바르지 않습니다.',
 };
 
 export function errorMessage(e: unknown): string {
