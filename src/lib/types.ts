@@ -1,6 +1,6 @@
 export type RoundStatus = 'WAITING' | 'READY' | 'ARMED' | 'LOCKED' | 'FINISHED';
 export type RoomStatus = 'OPEN' | 'ENDED';
-export type RoomMode = 'BUZZER' | 'SYNC';
+export type RoomMode = 'BUZZER' | 'SYNC' | 'MATCH';
 
 export interface Room {
   id: string;
@@ -206,4 +206,172 @@ export interface SyncSession {
   team_name: string;
   label: string;
   room_code: string;
+}
+
+// ---------------------------------------------------------------------------
+// FAMILY MATCH MODE (우리 가족 이구동성)
+
+export type MatchGameStatus =
+  | 'LOBBY' | 'QUESTION_READY' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'RESULT_REVEAL' | 'GAME_FINISHED';
+export type MatchQuestionStatus = 'PENDING' | 'READY' | 'OPEN' | 'CLOSED' | 'REVEALED';
+export type MatchOption = 'A' | 'B';
+
+export interface MatchGame {
+  id: string;
+  room_id: string;
+  game_number: number;
+  title: string;
+  status: MatchGameStatus;
+  question_count: number;
+  /** 0 = lobby */
+  current_question: number;
+  /** denominator of the final match rate (set when the game finishes) */
+  total_questions: number | null;
+  show_standings: boolean;
+  /** final ranks >= this (and every rank > 3) are public; 1 = all; null = none */
+  final_revealed_rank: number | null;
+  rev: number;
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface MatchQuestion {
+  id: string;
+  question_number: number;
+  story_title: string;
+  story_text: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  duration_seconds: number;
+  status: MatchQuestionStatus;
+  /** server clock (epoch ms) */
+  opened_ms: number | null;
+  closes_ms: number | null;
+  closed_ms: number | null;
+}
+
+/** editable part of a question */
+export type MatchQuestionDraft = Pick<MatchQuestion, 'story_title' | 'story_text' | 'question_text' | 'option_a' | 'option_b' | 'duration_seconds'>;
+
+export interface MatchVerdict {
+  team_id: string;
+  team_name: string;
+  label_1: string | null;
+  option_1: MatchOption | null;
+  label_2: string | null;
+  option_2: MatchOption | null;
+  matched: boolean;
+  points: 0 | 1;
+  /** running total up to this question */
+  total: number;
+}
+
+export interface MatchStanding {
+  team_id: string;
+  team_name: string;
+  score: number;
+  played: number;
+  rank: number;
+}
+
+export interface MatchFinalRow {
+  team_id: string;
+  team_name: string;
+  matched_count: number;
+  total_questions: number;
+  match_percentage: number;
+  rank: number;
+}
+
+export interface MatchProgress {
+  answered_teams: number;
+  answered_people: number;
+  team_count: number;
+}
+
+export interface MatchParticipantState {
+  ok: true;
+  participant: { id: string; label: string };
+  team: SyncParticipantState['team'];
+  room: Room;
+  game: MatchGame | null;
+  question: MatchQuestion | null;
+  me: { answer: MatchOption | null; seq: number | null };
+  reveal: {
+    mine: MatchOption | null;
+    partner: { label: string; option: MatchOption } | null;
+    matched: boolean;
+    points: number;
+  } | null;
+  /** points of revealed questions */
+  score: number;
+  final: MatchFinalRow[];
+  team_count: number;
+  server_now_ms: number;
+}
+
+export interface MatchAdminTeam {
+  team_id: string;
+  team_name: string;
+  /** answers to the current question (0..2) */
+  answered: number;
+  members: Array<{
+    participant_id: string;
+    label: string;
+    slot: number;
+    is_test: boolean;
+    online: boolean;
+    answered: boolean;
+  }>;
+}
+
+export interface MatchGameSummary {
+  id: string;
+  game_number: number;
+  title: string;
+  status: MatchGameStatus;
+  question_count: number;
+  current_question: number;
+  total_questions: number | null;
+  finished_at: string | null;
+  winners: string[];
+}
+
+export interface MatchAdminState {
+  room: Room;
+  game: MatchGame | null;
+  question: MatchQuestion | null;
+  questions: MatchQuestion[];
+  teams: MatchAdminTeam[];
+  progress: MatchProgress;
+  results: MatchVerdict[];
+  standings: MatchStanding[];
+  final: MatchFinalRow[];
+  games: MatchGameSummary[];
+  server_now_ms: number;
+}
+
+export interface MatchPublicState {
+  room: Room;
+  game: MatchGame | null;
+  question: MatchQuestion | null;
+  teams: Array<{ team_name: string; members: number }>;
+  progress: MatchProgress | null;
+  results: MatchVerdict[];
+  standings: MatchStanding[];
+  final: MatchFinalRow[];
+  server_now_ms: number;
+}
+
+export type MatchAnswerResult =
+  | 'ACCEPTED' | 'STALE' | 'NOT_OPEN' | 'TOO_LATE' | 'CLOSED' | 'STALE_QUESTION' | 'INVALID_OPTION'
+  | 'INVALID_TOKEN' | 'KICKED';
+
+export interface MatchAnswerResponse {
+  ok: boolean;
+  result: MatchAnswerResult;
+  question_id?: string;
+  /** the answer stored on the server after this request */
+  option?: MatchOption | null;
 }

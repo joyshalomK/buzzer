@@ -381,7 +381,7 @@ export function SyncAdminPanel({ token, room, onAuthError, notify }: {
             <button
               disabled={!!busy || running}
               onClick={() =>
-                window.confirm('가족 팀, 팀원, SYNC 라운드 기록을 모두 삭제할까요?\n(일반 퀴즈 부저 참가자와 기록은 그대로입니다)') &&
+                window.confirm('가족 팀, 팀원, SYNC 라운드 기록을 모두 삭제할까요?\n(가족 팀을 함께 쓰는 이구동성 점수도 지워지고 새 게임으로 돌아갑니다. 일반 퀴즈 부저 참가자와 기록은 그대로입니다)') &&
                 run('SYNCRESET', async () => {
                   await rpc('admin_sync_reset', { p_admin_token: token, p_room_id: room.id });
                   setBots([]);

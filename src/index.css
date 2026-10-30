@@ -79,6 +79,7 @@ body {
 .flash-winner { background: radial-gradient(circle, rgba(251, 191, 36, 0.8), transparent 70%); animation: flash 0.45s ease-out both; }
 .flash-armed { background: radial-gradient(circle, rgba(251, 58, 93, 0.6), transparent 70%); animation: flash 0.45s ease-out both; }
 .flash-sync { background: radial-gradient(circle, rgba(34, 211, 238, 0.6), transparent 70%); animation: flash 0.45s ease-out both; }
+.flash-match { background: radial-gradient(circle, rgba(244, 114, 182, 0.6), transparent 70%); animation: flash 0.45s ease-out both; }
 
 /* FAMILY SYNC: expanding rings while the window is open (no time shown) */
 @keyframes sync-ring {
@@ -94,7 +95,12 @@ body {
 }
 .rank-in { animation: rank-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 
+/* FAMILY MATCH: answer-window ring on the big screen */
+@keyframes match-tick { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.match-tick { animation: match-tick 1s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
+  .match-tick { animation: none; }
   .buzzer-armed, .buzzer-text-pulse { animation-duration: 2.5s; }
   .sync-ring, .sync-orbit { animation-duration: 4s; }
   .confetti-piece { display: none; }

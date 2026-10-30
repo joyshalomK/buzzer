@@ -12,6 +12,7 @@ import { sfx, unlockAudio, vibrate } from '../lib/sound';
 import { KEYS, load, save } from '../lib/storage';
 import { RpcError, errorMessage, rpc } from '../lib/supabase';
 import type { BuzzResponse, ParticipantSession, ParticipantSync, Room, RoomMode, Round, SyncFailure, SyncSession } from '../lib/types';
+import { MatchPlayScreen } from './MatchPlayScreen';
 import { SyncPlayScreen } from './SyncPlayScreen';
 
 class SessionEnded extends Error {}
@@ -54,6 +55,9 @@ export function ParticipantPage() {
   if (effectiveMode === 'SYNC' && activeSync) {
     return <SyncPlayScreen key={activeSync.token} session={activeSync} onLeave={leaveSync} onMode={setMode} />;
   }
+  if (effectiveMode === 'MATCH' && activeSync) {
+    return <MatchPlayScreen key={activeSync.token} session={activeSync} onLeave={leaveSync} onMode={setMode} />;
+  }
   if (effectiveMode === 'BUZZER' && active) {
     return <PlayScreen key={active.token} session={active} onLeave={leaveBuzzer} onMode={setMode} />;
   }
@@ -94,7 +98,9 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const sync = mode === 'SYNC';
+  // both family games use the same family team join
+  const sync = mode === 'SYNC' || mode === 'MATCH';
+  const match = mode === 'MATCH';
 
   useEffect(() => {
     if (initialCode) return;
@@ -160,7 +166,11 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
 
   return (
     <main className="stage flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      {sync ? (
+      {match ? (
+        <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
+          우리 가족<br /><span className="text-pink-300">이구동성</span>
+        </h1>
+      ) : sync ? (
         <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
           FAMILY<br /><span className="text-cyan-300">SYNC</span>
         </h1>

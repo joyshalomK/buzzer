@@ -1,4 +1,4 @@
-import type { Round, SyncTeamResult } from './types';
+import type { MatchFinalRow, MatchVerdict, Round, SyncTeamResult } from './types';
 
 function cell(v: unknown) {
   const s = v == null ? '' : String(v);
@@ -31,6 +31,23 @@ export function syncResultsToCsv(roundNumber: number, results: SyncTeamResult[])
     t.gap_ms ?? '', SYNC_STATUS[t.status],
   ]);
   return '\uFEFF' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
+}
+
+/** FAMILY MATCH final ranking. */
+export function matchFinalToCsv(gameNumber: number, final: MatchFinalRow[]) {
+  const header = ['게임', '순위', '가족팀', '일치 문항 수', '전체 문항 수', '일치율(%)'];
+  const rows = final.map((t) => [gameNumber, t.rank, t.team_name, t.matched_count, t.total_questions, t.match_percentage]);
+  return '﻿' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
+}
+
+/** FAMILY MATCH verdicts of one question. */
+export function matchVerdictsToCsv(questionNumber: number, verdicts: MatchVerdict[]) {
+  const header = ['문항', '가족팀', '참가자1', '선택1', '참가자2', '선택2', '일치', '점수', '누적 점수'];
+  const rows = verdicts.map((v) => [
+    questionNumber, v.team_name, v.label_1 ?? '', v.option_1 ?? '미응답', v.label_2 ?? '', v.option_2 ?? '미응답',
+    v.matched ? 'O' : 'X', v.points, v.total,
+  ]);
+  return '﻿' + [header, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
 }
 
 export function downloadCsv(filename: string, csv: string) {

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { RpcError, supabase } from '../lib/supabase';
-import type { Room, Round, SyncRound } from '../lib/types';
+import type { MatchGame, Room, Round, SyncRound } from '../lib/types';
 
 export type RealtimeStatus = 'connecting' | 'live' | 'down';
-export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds';
+export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds' | 'family_match_games';
+
+const DEFAULT_TABLES: LiveTable[] = ['rooms', 'rounds', 'sync_rounds'];
 
 export interface LiveSyncOptions<T> {
   /** room uuid to subscribe to; null = don't subscribe yet */
@@ -12,7 +14,9 @@ export interface LiveSyncOptions<T> {
   /** fetches authoritative state from the server */
   fetcher: () => Promise<T>;
   /** called for every realtime row change (before the debounced re-fetch) */
-  onChange?: (change: RealtimePostgresChangesPayload<Room | Round | SyncRound>, table: LiveTable) => void;
+  onChange?: (change: RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame>, table: LiveTable) => void;
+  /** tables to subscribe to (all filtered to this room) */
+  tables?: LiveTable[];
   /** re-fetch period while realtime is healthy (safety net) */
   liveIntervalMs?: number;
   /** re-fetch period while realtime is down (polling fallback) */
@@ -34,7 +38,7 @@ const STALE_AFTER_MS = 20_000;
 
 /**
  * Keeps local state in sync with the server:
- *  - Supabase Realtime postgres_changes on rooms/rounds/sync_rounds for instant updates
+ *  - Supabase Realtime postgres_changes on the room's tables for instant updates
  *  - every change triggers a re-fetch so the UI always ends on server truth
  *  - periodic re-fetch (fast polling if realtime is down, slow otherwise)
  *  - re-subscribe with backoff, and re-sync on tab focus / network change
@@ -46,6 +50,7 @@ export function useLiveSync<T>({
   liveIntervalMs = 8000,
   pollIntervalMs = 2000,
   enabled = true,
+  tables = DEFAULT_TABLES,
 }: LiveSyncOptions<T>): LiveSync<T> {
   const [data, setData] = useState<T | null>(null);
   const [realtime, setRealtime] = useState<RealtimeStatus>('connecting');
@@ -55,6 +60,7 @@ export function useLiveSync<T>({
   const [online, setOnline] = useState(() => navigator.onLine);
   const [now, setNow] = useState(() => Date.now());
   const [channelGen, setChannelGen] = useState(0);
+  const tableKey = tables.join(',');
 
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
@@ -114,24 +120,19 @@ export function useLiveSync<T>({
     let disposed = false;
     setRealtime('connecting');
 
-    const channel: RealtimeChannel = supabase
-      .channel(`room-${roomId}-${channelGen}-${Math.random().toString(36).slice(2, 8)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rounds', filter: `room_id=eq.${roomId}` },
+    let channel: RealtimeChannel = supabase.channel(`room-${roomId}-${channelGen}-${Math.random().toString(36).slice(2, 8)}`);
+    for (const table of tableKey.split(',') as LiveTable[]) {
+      channel = channel.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table, filter: table === 'rooms' ? `id=eq.${roomId}` : `room_id=eq.${roomId}` },
         (p) => {
-          onChangeRef.current?.(p as RealtimePostgresChangesPayload<Round>, 'rounds');
-          scheduleRefresh();
-        })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sync_rounds', filter: `room_id=eq.${roomId}` },
-        (p) => {
-          onChangeRef.current?.(p as RealtimePostgresChangesPayload<SyncRound>, 'sync_rounds');
-          scheduleRefresh();
-        })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
-        (p) => {
-          onChangeRef.current?.(p as RealtimePostgresChangesPayload<Room>, 'rooms');
-          // spread participant re-syncs out a little when 20 phones get the same event
-          scheduleRefresh(150 + Math.random() * 600);
-        })
+          onChangeRef.current?.(p as RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame>, table);
+          // spread participant re-syncs out a little when 20 phones get the same room event
+          scheduleRefresh(table === 'rooms' ? 150 + Math.random() * 600 : 120);
+        },
+      );
+    }
+    channel
       .subscribe((status) => {
         if (disposed) return;
         if (status === 'SUBSCRIBED') {
@@ -149,7 +150,7 @@ export function useLiveSync<T>({
       window.clearTimeout(retryTimer);
       void supabase.removeChannel(channel);
     };
-  }, [enabled, roomId, channelGen, refresh, scheduleRefresh]);
+  }, [enabled, roomId, channelGen, tableKey, refresh, scheduleRefresh]);
 
   // periodic re-fetch: safety net when live, polling fallback when down
   useEffect(() => {

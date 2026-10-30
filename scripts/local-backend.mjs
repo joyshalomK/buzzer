@@ -56,7 +56,9 @@ createServer(async (req, res) => {
   const keys = Object.keys(args);
   const sql = `select public.${m[1]}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')}) as r`;
   try {
-    const out = await pool.query(sql, keys.map((k) => args[k]));
+    // objects and arrays of objects are jsonb parameters; arrays of scalars stay Postgres arrays
+    const value = (v) => (v !== null && typeof v === 'object' && !(Array.isArray(v) && v.every((x) => x === null || typeof x !== 'object')) ? JSON.stringify(v) : v);
+    const out = await pool.query(sql, keys.map((k) => value(args[k])));
     res.writeHead(200, { ...cors, 'Content-Type': 'application/json' }).end(JSON.stringify(out.rows[0]?.r ?? null));
   } catch (e) {
     res.writeHead(400, { ...cors, 'Content-Type': 'application/json' })

@@ -9,6 +9,7 @@ import { sfx, unlockAudio } from '../lib/sound';
 import { KEYS, load, save } from '../lib/storage';
 import { RpcError, errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
 import type { AdminState, BuzzResponse, Room, RoomMode, Round, RoundStatus } from '../lib/types';
+import { MatchAdminPanel } from './MatchAdminPanel';
 import { SyncAdminPanel } from './SyncAdminPanel';
 
 interface AdminSession {
@@ -191,6 +192,12 @@ function RoomPicker({ token, onPick, onLogout, onAuthError }: {
 
 // ---------------------------------------------------------------------------
 
+const MODE_ACTIVE: Record<RoomMode, string> = {
+  BUZZER: 'bg-amber-400 text-amber-950',
+  SYNC: 'bg-cyan-500 text-white',
+  MATCH: 'bg-pink-500 text-white',
+};
+
 const STATUS_LABEL: Record<RoundStatus, string> = {
   WAITING: '대기 중',
   READY: '준비',
@@ -304,7 +311,7 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
   // keyboard shortcuts for the host: R / A / L / N
   const actRef = useRef(act);
   actRef.current = act;
-  const buzzerMode = room?.mode !== 'SYNC';
+  const buzzerMode = !room || room.mode === 'BUZZER';
   const flags = useRef({ canReady, canArm, canLock, open, buzzerMode });
   flags.current = { canReady, canArm, canLock, open, buzzerMode };
   useEffect(() => {
@@ -335,7 +342,7 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
 
   const switchMode = (mode: RoomMode) => {
     if (!room || room.mode === mode) return;
-    const label = mode === 'SYNC' ? 'FAMILY SYNC MODE' : '일반 퀴즈 부저';
+    const label = mode === 'SYNC' ? 'FAMILY SYNC MODE' : mode === 'MATCH' ? '가족 이구동성 (FAMILY MATCH)' : '일반 퀴즈 부저';
     if (!window.confirm(`${label}로 전환할까요?\n참가자 화면이 바로 바뀝니다. (각 모드의 참가자·기록은 그대로 유지됩니다)`)) return;
     void run('MODE', async () => {
       const r = await rpc<Room>('admin_set_mode', { p_admin_token: token, p_room_id: room.id, p_mode: mode });
@@ -395,12 +402,12 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
       <section className="mt-4 flex flex-wrap items-center gap-3 rounded-3xl bg-white/5 p-3 ring-1 ring-white/10">
         <span className="px-2 font-bold text-white/70">게임 모드</span>
         <div className="flex rounded-2xl bg-black/20 p-1">
-          {([['BUZZER', '일반 퀴즈 부저'], ['SYNC', 'FAMILY SYNC MODE']] as const).map(([m, label]) => (
+          {([['BUZZER', '일반 퀴즈 부저'], ['SYNC', 'FAMILY SYNC MODE'], ['MATCH', '가족 이구동성']] as const).map(([m, label]) => (
             <button
               key={m}
               disabled={!open || !!busy}
               onClick={() => switchMode(m)}
-              className={`rounded-xl px-4 py-2 font-black transition ${room.mode === m ? (m === 'SYNC' ? 'bg-cyan-500 text-white' : 'bg-amber-400 text-amber-950') : 'text-white/60 hover:bg-white/10'}`}
+              className={`rounded-xl px-4 py-2 font-black transition ${room.mode === m ? MODE_ACTIVE[m] : 'text-white/60 hover:bg-white/10'}`}
             >
               {label}
             </button>
@@ -408,7 +415,10 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
         </div>
       </section>
 
-      {!buzzerMode && <SyncAdminPanel token={token} room={room} onAuthError={onLogout} notify={notify} />}
+      {room.mode === 'SYNC' && <SyncAdminPanel token={token} room={room} onAuthError={onLogout} notify={notify} />}
+      {room.mode === 'MATCH' && (
+        <MatchAdminPanel token={token} room={room} onAuthError={onLogout} notify={notify} onRoom={(r) => live.setData((d) => (d ? { ...d, room: r } : d))} />
+      )}
 
       {buzzerMode && (<>
       {/* ---------- stage ---------- */}
@@ -623,7 +633,9 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
             가상 참가자(봇)를 만들어 실제 서버 판정 경로(buzz RPC)로 동시에 부저를 눌러 봅니다. 끄면 봇이 삭제됩니다.
           </p>
           {room.test_mode && !buzzerMode && (
-            <p className="mt-3 text-sm font-bold text-violet-200">FAMILY SYNC 봇은 위쪽 'SYNC 테스트 봇'에서 추가합니다.</p>
+            <p className="mt-3 text-sm font-bold text-violet-200">
+              가족 봇은 위쪽 '{room.mode === 'MATCH' ? '이구동성 테스트 봇' : 'SYNC 테스트 봇'}'에서 추가합니다.
+            </p>
           )}
           {room.test_mode && buzzerMode && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -702,7 +714,9 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
             <button onClick={onLogout} className="btn btn-ghost">로그아웃</button>
           </div>
           <p className="mt-3 text-sm text-white/50">
-            {buzzerMode ? '단축키: R 준비 · A 부저 활성화 · L 잠금 · N 다음 문제' : '참가자 전체 초기화는 부저 참가자와 FAMILY SYNC 팀을 모두 지웁니다.'}
+            {buzzerMode
+              ? '단축키: R 준비 · A 부저 활성화 · L 잠금 · N 다음 문제'
+              : '참가자 전체 초기화는 부저 참가자와 가족 팀(SYNC·이구동성 기록 포함)을 모두 지웁니다. 이구동성 문항은 유지됩니다.'}
           </p>
         </div>
       </section>
