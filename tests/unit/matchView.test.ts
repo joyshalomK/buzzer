@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { matchFinalToCsv, matchVerdictsToCsv } from '../../src/lib/csv';
 import {
-  createSeq, deriveMatchView, finalFullyRevealed, finalTies, formatPercent, optionText, validateDraft, verdictMessage,
+  createSeq, deriveMatchView, finalFullyRevealed, finalTies, formatPercent, matchImage, optionText, validateDraft, verdictMessage,
   type MatchViewInput,
 } from '../../src/lib/matchView';
 import type { MatchFinalRow, MatchGame, MatchQuestion, Room } from '../../src/lib/types';
@@ -74,6 +74,13 @@ describe('helpers', () => {
     expect(formatPercent(null)).toBe('-');
     expect(optionText(question, 'B')).toBe('피자');
     expect(optionText(question, null)).toBe('');
+  });
+
+  it('maps question numbers to the scene pictures in public/match', () => {
+    expect(matchImage(1)).toBe('/match/q1.jpg');
+    expect(matchImage(10)).toBe('/match/q10.jpg');
+    expect(matchImage(0)).toBeNull();
+    expect(matchImage(11)).toBeNull();
   });
 
   it('finds tied families in the final ranking', () => {

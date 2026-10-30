@@ -6,7 +6,7 @@ import { QrCode } from '../components/QrCode';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useAtServerTime, useServerNow } from '../hooks/useServerNow';
 import { useSoundState } from '../hooks/useSound';
-import { finalFullyRevealed, formatPercent, screenVerdict } from '../lib/matchView';
+import { MATCH_IMAGE_COUNT, finalFullyRevealed, formatPercent, matchImage, screenVerdict } from '../lib/matchView';
 import { timed } from '../lib/serverClock';
 import { sfx, unlockAudio } from '../lib/sound';
 import { errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
@@ -31,6 +31,10 @@ export function MatchDisplay({ code }: { code: string }) {
   useEffect(() => {
     if (s?.room.id) setRoomId(s.room.id);
   }, [s?.room.id]);
+  // load every scene image up front so a new question never shows a blank frame
+  useEffect(() => {
+    for (let n = 1; n <= MATCH_IMAGE_COUNT; n++) new Image().src = matchImage(n)!;
+  }, []);
   // answers emit no realtime events (by design): poll faster while answering is open
   useEffect(() => setFast(open), [open]);
 
@@ -66,8 +70,15 @@ export function MatchDisplay({ code }: { code: string }) {
 
   return (
     <main className="stage relative flex min-h-dvh flex-col overflow-hidden p-[3vmin]" onPointerDown={unlockAudio}>
+      {status === 'RESULT_REVEAL' && q && matchImage(q.question_number) && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-15 blur-[2px]"
+          style={{ backgroundImage: `url(${matchImage(q.question_number)})` }}
+        />
+      )}
       {celebrate > 0 && <Confetti key={celebrate} count={180} />}
-      <header className="flex items-start justify-between gap-4">
+      <header className="relative flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-display text-[5vmin] leading-none text-pink-300">우리 가족 이구동성</p>
           <p className="mt-2 truncate text-[2.6vmin] font-bold text-white/70">
@@ -94,7 +105,7 @@ export function MatchDisplay({ code }: { code: string }) {
         </p>
       )}
 
-      <div className="flex min-h-0 flex-1 gap-[3vmin]">
+      <div className="relative flex min-h-0 flex-1 gap-[3vmin]">
         <section className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
           {status === 'ENDED' && <p className="font-display text-[11vmin] text-white/85">게임 종료</p>}
 
@@ -118,46 +129,52 @@ export function MatchDisplay({ code }: { code: string }) {
           )}
 
           {(status === 'QUESTION_READY' || status === 'QUESTION_OPEN') && q && (
-            <div className="flex w-full flex-col items-center">
-              <p className="text-[3.6vmin] font-black text-amber-300">Q{q.question_number}. {q.story_title}</p>
-              {q.story_text && <p className="mt-1 max-w-[120vmin] text-[2.8vmin] text-white/75">{q.story_text}</p>}
-              <p className="mt-[1.5vmin] max-w-[130vmin] font-display text-[7.5vmin] leading-tight text-white">{q.question_text}</p>
-              <div className="mt-[3vmin] grid w-full max-w-[140vmin] grid-cols-2 gap-[2.5vmin]">
-                {(['A', 'B'] as const).map((o) => (
-                  <div key={o} className={`flex items-center gap-[2vmin] rounded-[3vmin] px-[3vmin] py-[3vmin] text-left ${o === 'A' ? 'bg-rose-500 shadow-[0_1vmin_0_#9f1239]' : 'bg-sky-500 shadow-[0_1vmin_0_#075985]'}`}>
-                    <span className="font-display text-[9vmin] leading-none text-white/90">{o}</span>
-                    <span className="text-[4.6vmin] font-black leading-tight text-white">{o === 'A' ? q.option_a : q.option_b}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-[3vmin] flex items-center gap-[3vmin]">
-                <span className={`rounded-full px-[3vmin] py-[1vmin] font-display text-[5vmin] tabular-nums
-                  ${status === 'QUESTION_OPEN' ? (remaining != null && remaining <= 5 ? 'match-tick bg-rose-500 text-white' : 'bg-white/15 text-white') : 'bg-white/10 text-white/60'}`}
-                >
-                  {status === 'QUESTION_OPEN' ? `⏱ ${remaining ?? '-'}초` : `제한 시간 ${q.duration_seconds}초`}
-                </span>
-                {status === 'QUESTION_OPEN' && s.progress && (
-                  <span className="rounded-full bg-white/10 px-[3vmin] py-[1vmin] text-[3.4vmin] font-black">
-                    응답 완료 <span className="text-pink-300">{s.progress.answered_teams}</span> / {s.progress.team_count}가족
+            <div className="flex w-full items-center gap-[4vmin]">
+              <SceneImage n={q.question_number} />
+              <div className="flex min-w-0 flex-1 flex-col items-center">
+                <p className="text-[3.6vmin] font-black text-amber-300">Q{q.question_number}. {q.story_title}</p>
+                {q.story_text && <p className="mt-1 text-[2.6vmin] text-white/75">{q.story_text}</p>}
+                <p className="mt-[1.5vmin] font-display text-[6.5vmin] leading-tight text-white">{q.question_text}</p>
+                <div className="mt-[3vmin] flex w-full flex-col gap-[2vmin]">
+                  {(['A', 'B'] as const).map((o) => (
+                    <div key={o} className={`flex items-center gap-[2vmin] rounded-[3vmin] px-[3vmin] py-[2.2vmin] text-left ${o === 'A' ? 'bg-rose-500 shadow-[0_1vmin_0_#9f1239]' : 'bg-sky-500 shadow-[0_1vmin_0_#075985]'}`}>
+                      <span className="font-display text-[8vmin] leading-none text-white/90">{o}</span>
+                      <span className="text-[4.4vmin] font-black leading-tight text-white">{o === 'A' ? q.option_a : q.option_b}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-[3vmin] flex flex-wrap items-center justify-center gap-[2vmin]">
+                  <span className={`rounded-full px-[3vmin] py-[1vmin] font-display text-[5vmin] tabular-nums
+                    ${status === 'QUESTION_OPEN' ? (remaining != null && remaining <= 5 ? 'match-tick bg-rose-500 text-white' : 'bg-white/15 text-white') : 'bg-white/10 text-white/60'}`}
+                  >
+                    {status === 'QUESTION_OPEN' ? `⏱ ${remaining ?? '-'}초` : `제한 시간 ${q.duration_seconds}초`}
                   </span>
-                )}
-                {status === 'QUESTION_READY' && <span className="text-[3.4vmin] font-black text-emerald-300">곧 응답이 시작됩니다!</span>}
+                  {status === 'QUESTION_OPEN' && s.progress && (
+                    <span className="rounded-full bg-white/10 px-[3vmin] py-[1vmin] text-[3.2vmin] font-black">
+                      응답 완료 <span className="text-pink-300">{s.progress.answered_teams}</span> / {s.progress.team_count}가족
+                    </span>
+                  )}
+                  {status === 'QUESTION_READY' && <span className="text-[3.2vmin] font-black text-emerald-300">곧 응답이 시작됩니다!</span>}
+                </div>
               </div>
             </div>
           )}
 
           {status === 'QUESTION_CLOSED' && (
-            <>
-              {q && <p className="text-[3vmin] font-bold text-white/60">Q{q.question_number}. {q.question_text}</p>}
-              <p className="winner-pop mt-[2vmin] font-display text-[8vmin] leading-tight text-pink-200">
-                과연 우리 가족의 마음은<br />통했을까요?
-              </p>
-              {s.progress && (
-                <p className="mt-[3vmin] rounded-full bg-white/10 px-[3vmin] py-[1vmin] text-[3.2vmin] font-black">
-                  두 사람 모두 응답한 가족 {s.progress.answered_teams} / {s.progress.team_count}
+            <div className="flex w-full items-center gap-[4vmin]">
+              {q && <SceneImage n={q.question_number} />}
+              <div className="flex min-w-0 flex-1 flex-col items-center">
+                {q && <p className="text-[3vmin] font-bold text-white/60">Q{q.question_number}. {q.question_text}</p>}
+                <p className="winner-pop mt-[2vmin] font-display text-[7.5vmin] leading-tight text-pink-200">
+                  과연 우리 가족의 마음은<br />통했을까요?
                 </p>
-              )}
-            </>
+                {s.progress && (
+                  <p className="mt-[3vmin] rounded-full bg-white/10 px-[3vmin] py-[1vmin] text-[3.2vmin] font-black">
+                    두 사람 모두 응답한 가족 {s.progress.answered_teams} / {s.progress.team_count}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
 
           {status === 'RESULT_REVEAL' && q && (
@@ -271,5 +288,23 @@ function SmallRow({ t }: { t: MatchFinalRow }) {
       <span className="min-w-0 flex-1 truncate font-bold">{t.team_name}</span>
       <span className="text-pink-200">{t.matched_count}/{t.total_questions}</span>
     </li>
+  );
+}
+
+/** The story picture of a question, as large as the 16:9 screen allows. */
+function SceneImage({ n }: { n: number }) {
+  const [failed, setFailed] = useState<number | null>(null);
+  const src = matchImage(n);
+  if (!src || failed === n) return null;
+  return (
+    <div className="flex h-[70vh] w-[55%] shrink-0 items-center justify-center">
+      <img
+        key={n}
+        src={src}
+        alt=""
+        onError={() => setFailed(n)}
+        className="winner-pop max-h-full max-w-full rounded-[3vmin] shadow-[0_2vmin_6vmin_rgba(0,0,0,0.45)]"
+      />
+    </div>
   );
 }

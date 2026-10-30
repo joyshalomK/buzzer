@@ -77,6 +77,11 @@ export function formatPercent(p: number | null | undefined) {
   return `${Number.isInteger(p) ? p : p.toFixed(1)}%`;
 }
 
+/** Scene pictures shipped in public/match: q1.jpg … q10.jpg, one per question number. */
+export const MATCH_IMAGE_COUNT = 10;
+export const matchImage = (questionNumber: number) =>
+  Number.isInteger(questionNumber) && questionNumber >= 1 && questionNumber <= MATCH_IMAGE_COUNT ? `/match/q${questionNumber}.jpg` : null;
+
 export const optionText = (q: Pick<MatchQuestion, 'option_a' | 'option_b'> | null | undefined, o: MatchOption | null | undefined) =>
   !q || !o ? '' : o === 'A' ? q.option_a : q.option_b;
 
