@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { matchFinalToCsv, matchVerdictsToCsv } from '../../src/lib/csv';
 import {
-  createSeq, deriveMatchView, finalFullyRevealed, finalTies, formatPercent, matchImage, optionText, validateDraft, verdictMessage,
+  MATCH_IMAGES, createSeq, deriveMatchView, finalFullyRevealed, finalTies, formatPercent, isValidImageUrl, optionText, validateDraft, verdictMessage,
   type MatchViewInput,
 } from '../../src/lib/matchView';
 import type { MatchFinalRow, MatchGame, MatchQuestion, Room } from '../../src/lib/types';
@@ -18,7 +18,7 @@ const game = (o: Partial<MatchGame> = {}): MatchGame => ({
 const CLOSES = 1_000_000;
 const question: MatchQuestion = {
   id: 'q1', question_number: 3, story_title: '수상한 식탁', story_text: '', question_text: '무엇을 먼저 먹을까요?',
-  option_a: '치킨', option_b: '피자', duration_seconds: 15, status: 'OPEN', opened_ms: CLOSES - 15_000, closes_ms: CLOSES, closed_ms: null,
+  option_a: '치킨', option_b: '피자', duration_seconds: 15, image_url: '/match/q3.jpg', status: 'OPEN', opened_ms: CLOSES - 15_000, closes_ms: CLOSES, closed_ms: null,
 };
 const base: MatchViewInput = { room, game: game(), question: null, teamSize: 2, now: CLOSES - 20_000 };
 const view = (o: Partial<MatchViewInput>) => deriveMatchView({ ...base, ...o });
@@ -76,11 +76,16 @@ describe('helpers', () => {
     expect(optionText(question, null)).toBe('');
   });
 
-  it('maps question numbers to the scene pictures in public/match', () => {
-    expect(matchImage(1)).toBe('/match/q1.jpg');
-    expect(matchImage(10)).toBe('/match/q10.jpg');
-    expect(matchImage(0)).toBeNull();
-    expect(matchImage(11)).toBeNull();
+  it('offers the shipped pictures and accepts only safe picture addresses (same rule as the server)', () => {
+    expect(MATCH_IMAGES).toHaveLength(10);
+    expect(MATCH_IMAGES[0]).toEqual({ url: '/match/q1.jpg', label: '밸런스1' });
+    expect(MATCH_IMAGES.every((m) => isValidImageUrl(m.url))).toBe(true);
+    expect(isValidImageUrl('')).toBe(true);
+    expect(isValidImageUrl('https://example.com/a.png?x=1')).toBe(true);
+    expect(isValidImageUrl('http://example.com/a.png')).toBe(false);
+    expect(isValidImageUrl('https://example.com/a.png") ; x')).toBe(false);
+    expect(isValidImageUrl('javascript:alert(1)')).toBe(false);
+    expect(isValidImageUrl('/match/../secret.jpg')).toBe(false);
   });
 
   it('finds tied families in the final ranking', () => {
@@ -92,11 +97,12 @@ describe('helpers', () => {
   });
 
   it('validates question drafts like the server', () => {
-    const d = { story_title: '제목', story_text: '', question_text: '질문?', option_a: 'A안', option_b: 'B안', duration_seconds: 15 };
+    const d = { story_title: '제목', story_text: '', question_text: '질문?', option_a: 'A안', option_b: 'B안', duration_seconds: 15, image_url: '' };
     expect(validateDraft(d)).toBeNull();
     expect(validateDraft({ ...d, option_b: ' ' })).toContain('보기');
     expect(validateDraft({ ...d, duration_seconds: 31 })).toContain('5~30');
     expect(validateDraft({ ...d, question_text: 'ㄱ'.repeat(101) })).toContain('100자');
+    expect(validateDraft({ ...d, image_url: 'ftp://x/a.jpg' })).toContain('그림');
   });
 });
 

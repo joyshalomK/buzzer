@@ -6,7 +6,7 @@ import { QrCode } from '../components/QrCode';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useAtServerTime, useServerNow } from '../hooks/useServerNow';
 import { useSoundState } from '../hooks/useSound';
-import { MATCH_IMAGE_COUNT, finalFullyRevealed, formatPercent, matchImage, screenVerdict } from '../lib/matchView';
+import { MATCH_IMAGES, finalFullyRevealed, formatPercent, screenVerdict } from '../lib/matchView';
 import { timed } from '../lib/serverClock';
 import { sfx, unlockAudio } from '../lib/sound';
 import { errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
@@ -31,9 +31,9 @@ export function MatchDisplay({ code }: { code: string }) {
   useEffect(() => {
     if (s?.room.id) setRoomId(s.room.id);
   }, [s?.room.id]);
-  // load every scene image up front so a new question never shows a blank frame
+  // load the shipped pictures up front so a new question never shows a blank frame
   useEffect(() => {
-    for (let n = 1; n <= MATCH_IMAGE_COUNT; n++) new Image().src = matchImage(n)!;
+    for (const img of MATCH_IMAGES) new Image().src = img.url;
   }, []);
   // answers emit no realtime events (by design): poll faster while answering is open
   useEffect(() => setFast(open), [open]);
@@ -70,11 +70,11 @@ export function MatchDisplay({ code }: { code: string }) {
 
   return (
     <main className="stage relative flex min-h-dvh flex-col overflow-hidden p-[3vmin]" onPointerDown={unlockAudio}>
-      {status === 'RESULT_REVEAL' && q && matchImage(q.question_number) && (
+      {status === 'RESULT_REVEAL' && q?.image_url && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-15 blur-[2px]"
-          style={{ backgroundImage: `url(${matchImage(q.question_number)})` }}
+          style={{ backgroundImage: `url("${q.image_url}")` }}
         />
       )}
       {celebrate > 0 && <Confetti key={celebrate} count={180} />}
@@ -130,7 +130,7 @@ export function MatchDisplay({ code }: { code: string }) {
 
           {(status === 'QUESTION_READY' || status === 'QUESTION_OPEN') && q && (
             <div className="flex w-full items-center gap-[4vmin]">
-              <SceneImage n={q.question_number} />
+              <SceneImage src={q.image_url} />
               <div className="flex min-w-0 flex-1 flex-col items-center">
                 <p className="text-[3.6vmin] font-black text-amber-300">Q{q.question_number}. {q.story_title}</p>
                 {q.story_text && <p className="mt-1 text-[2.6vmin] text-white/75">{q.story_text}</p>}
@@ -162,7 +162,7 @@ export function MatchDisplay({ code }: { code: string }) {
 
           {status === 'QUESTION_CLOSED' && (
             <div className="flex w-full items-center gap-[4vmin]">
-              {q && <SceneImage n={q.question_number} />}
+              {q && <SceneImage src={q.image_url} />}
               <div className="flex min-w-0 flex-1 flex-col items-center">
                 {q && <p className="text-[3vmin] font-bold text-white/60">Q{q.question_number}. {q.question_text}</p>}
                 <p className="winner-pop mt-[2vmin] font-display text-[7.5vmin] leading-tight text-pink-200">
@@ -292,17 +292,16 @@ function SmallRow({ t }: { t: MatchFinalRow }) {
 }
 
 /** The story picture of a question, as large as the 16:9 screen allows. */
-function SceneImage({ n }: { n: number }) {
-  const [failed, setFailed] = useState<number | null>(null);
-  const src = matchImage(n);
-  if (!src || failed === n) return null;
+function SceneImage({ src }: { src: string }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  if (!src || failed === src) return null;
   return (
     <div className="flex h-[70vh] w-[55%] shrink-0 items-center justify-center">
       <img
-        key={n}
+        key={src}
         src={src}
         alt=""
-        onError={() => setFailed(n)}
+        onError={() => setFailed(src)}
         className="winner-pop max-h-full max-w-full rounded-[3vmin] shadow-[0_2vmin_6vmin_rgba(0,0,0,0.45)]"
       />
     </div>

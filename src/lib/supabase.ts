@@ -81,6 +81,7 @@ const MESSAGES: Record<string, string> = {
   QUESTION_LOCKED: '이미 시작한 문항은 수정할 수 없습니다.',
   INVALID_QUESTIONS: '문항 정보가 올바르지 않습니다.',
   INVALID_DURATION: '제한 시간은 5~30초 사이로 입력해 주세요.',
+  INVALID_IMAGE: '그림 주소가 올바르지 않습니다. https:// 로 시작하는 주소를 입력해 주세요.',
   GAME_TITLE_REQUIRED: '게임 제목을 입력해 주세요.',
   GAME_TITLE_TOO_LONG: '게임 제목은 40자 이내로 입력해 주세요.',
   STORY_TITLE_REQUIRED: '모든 문항의 스토리 제목을 입력해 주세요.',

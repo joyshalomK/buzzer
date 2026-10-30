@@ -77,10 +77,14 @@ export function formatPercent(p: number | null | undefined) {
   return `${Number.isInteger(p) ? p : p.toFixed(1)}%`;
 }
 
-/** Scene pictures shipped in public/match: q1.jpg … q10.jpg, one per question number. */
-export const MATCH_IMAGE_COUNT = 10;
-export const matchImage = (questionNumber: number) =>
-  Number.isInteger(questionNumber) && questionNumber >= 1 && questionNumber <= MATCH_IMAGE_COUNT ? `/match/q${questionNumber}.jpg` : null;
+/** Pictures shipped in public/match (밸런스1 … 밸런스10), offered in the question editor. */
+export const MATCH_IMAGES = Array.from({ length: 10 }, (_, i) => ({ url: `/match/q${i + 1}.jpg`, label: `밸런스${i + 1}` }));
+
+/** Same rule as the server (private.match_image): '', a shipped picture, or an https address. */
+export function isValidImageUrl(url: string) {
+  const v = url.trim();
+  return v === '' || (v.length <= 500 && (/^\/match\/[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(v) || /^https:\/\/[^\s"'()<>\\]+$/.test(v)));
+}
 
 export const optionText = (q: Pick<MatchQuestion, 'option_a' | 'option_b'> | null | undefined, o: MatchOption | null | undefined) =>
   !q || !o ? '' : o === 'A' ? q.option_a : q.option_b;
@@ -121,6 +125,7 @@ export function validateDraft(d: MatchQuestionDraft): string | null {
   if (!len(d.option_a) || !len(d.option_b)) return 'A/B 보기를 모두 입력해 주세요';
   if (len(d.option_a) > QUESTION_LIMITS.option || len(d.option_b) > QUESTION_LIMITS.option) return `보기는 ${QUESTION_LIMITS.option}자 이내`;
   if (!Number.isInteger(d.duration_seconds) || d.duration_seconds < 5 || d.duration_seconds > 30) return '제한 시간은 5~30초';
+  if (!isValidImageUrl(d.image_url)) return '그림 주소는 https:// 로 시작해야 합니다 (따옴표·괄호·공백 불가)';
   return null;
 }
 
@@ -131,4 +136,5 @@ export const toDraft = (q: MatchQuestion): MatchQuestionDraft => ({
   option_a: q.option_a,
   option_b: q.option_b,
   duration_seconds: q.duration_seconds,
+  image_url: q.image_url ?? '',
 });

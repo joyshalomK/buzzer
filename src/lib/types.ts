@@ -244,6 +244,8 @@ export interface MatchQuestion {
   option_a: string;
   option_b: string;
   duration_seconds: number;
+  /** picture on the big screen: '' (none), /match/… (shipped) or https://… */
+  image_url: string;
   status: MatchQuestionStatus;
   /** server clock (epoch ms) */
   opened_ms: number | null;
@@ -252,7 +254,7 @@ export interface MatchQuestion {
 }
 
 /** editable part of a question */
-export type MatchQuestionDraft = Pick<MatchQuestion, 'story_title' | 'story_text' | 'question_text' | 'option_a' | 'option_b' | 'duration_seconds'>;
+export type MatchQuestionDraft = Pick<MatchQuestion, 'story_title' | 'story_text' | 'question_text' | 'option_a' | 'option_b' | 'duration_seconds' | 'image_url'>;
 
 export interface MatchVerdict {
   team_id: string;

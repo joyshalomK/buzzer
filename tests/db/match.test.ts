@@ -350,6 +350,46 @@ describe('M9. new game / restart', () => {
   });
 });
 
+describe('M13. pictures on the big screen', () => {
+  it('each question carries its picture; the editor can change it, reordering moves it, bad addresses are refused', async () => {
+    const room = await matchRoom();
+    const s0 = await adminState(room);
+    expect(s0.questions.map((q: any) => q.image_url)).toEqual(Array.from({ length: 10 }, (_, i) => `/match/q${i + 1}.jpg`));
+
+    // swap questions 1 and 2 (picture follows), give 3 a web picture, remove 4's picture
+    const qs = s0.questions.map((q: any) => ({ ...q }));
+    [qs[0], qs[1]] = [qs[1], qs[0]];
+    qs[2].image_url = 'https://example.com/pic.png';
+    qs[3].image_url = '';
+    const setup = (questions: any[]) => rpc(anon, 'admin_match_setup', {
+      p_admin_token: admin, p_room_id: room.id, p_game_id: s0.game.id, p_title: s0.game.title,
+      p_question_count: 10, p_questions: JSON.stringify(questions),
+    });
+    await setup(qs);
+    let s = await adminState(room);
+    expect(s.questions.slice(0, 4).map((q: any) => [q.story_title, q.image_url])).toEqual([
+      ['복도에 남겨진 발자국', '/match/q2.jpg'], ['사라진 선물 상자', '/match/q1.jpg'],
+      ['수상한 식탁', 'https://example.com/pic.png'], ['휴대폰 속 비밀 메시지', ''],
+    ]);
+    for (const bad of ['http://example.com/a.png', 'https://x.com/a.png") ; y', '/match/../a.jpg', 'javascript:alert(1)']) {
+      expect(await setup(qs.map((q: any, i: number) => (i === 5 ? { ...q, image_url: bad } : q))).catch((e) => e.message)).toBe('INVALID_IMAGE');
+    }
+    // an older admin screen that does not send image_url keeps the picture
+    const { image_url: _, ...noImage } = s.questions[1];
+    await rpc(anon, 'admin_match_edit_question', {
+      p_admin_token: admin, p_room_id: room.id, p_game_id: s0.game.id, p_question_number: 2, p_question: JSON.stringify(noImage),
+    });
+    expect((await adminState(room)).questions[1].image_url).toBe('/match/q1.jpg');
+
+    // the screen and the next game get the picture of the question on screen
+    await act(room, 'PREPARE');
+    expect((await publicState(room)).question.image_url).toBe('/match/q2.jpg');
+    await act(room, 'NEW_GAME');
+    s = await adminState(room);
+    expect(s.questions[2].image_url).toBe('https://example.com/pic.png');
+  });
+});
+
 describe('M10. other modes are unaffected', () => {
   it('buzzer and FAMILY SYNC still work in the same room; switching is blocked while a question is open', async () => {
     const room = await matchRoom();

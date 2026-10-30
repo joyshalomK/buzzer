@@ -4,7 +4,7 @@ import { OptionBadge } from '../components/MatchResults';
 import { useLiveSync } from '../hooks/useLiveSync';
 import { useAtServerTime, useServerNow } from '../hooks/useServerNow';
 import { downloadCsv, matchFinalToCsv, matchVerdictsToCsv } from '../lib/csv';
-import { GAME_STATUS_LABEL, QUESTION_LIMITS, finalFullyRevealed, finalTies, formatPercent, toDraft, validateDraft } from '../lib/matchView';
+import { GAME_STATUS_LABEL, MATCH_IMAGES, QUESTION_LIMITS, finalFullyRevealed, finalTies, formatPercent, toDraft, validateDraft } from '../lib/matchView';
 import { timed } from '../lib/serverClock';
 import { sfx } from '../lib/sound';
 import { RpcError, errorMessage, rpc } from '../lib/supabase';
@@ -584,7 +584,7 @@ function QuestionEditor({ token, room, state, busy, run, notify }: {
     });
   };
 
-  const field = 'w-full rounded-lg border border-white/15 bg-white/10 px-2 py-1.5 text-white outline-none focus:border-pink-300 disabled:opacity-50';
+  const field = 'rounded-lg border border-white/15 bg-white/10 px-2 py-1.5 text-white outline-none focus:border-pink-300 disabled:opacity-50';
 
   return (
     <section className="mt-4 rounded-3xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -609,7 +609,7 @@ function QuestionEditor({ token, room, state, busy, run, notify }: {
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <label className="min-w-[16rem] flex-1">
               <span className="text-sm font-bold text-white/70">게임 제목</span>
-              <input disabled={!lobby} value={title} maxLength={QUESTION_LIMITS.title} onChange={(e) => { setDirty(true); setTitle(e.target.value); }} className={field} />
+              <input disabled={!lobby} value={title} maxLength={QUESTION_LIMITS.title} onChange={(e) => { setDirty(true); setTitle(e.target.value); }} className={`${field} w-full`} />
             </label>
             <label>
               <span className="text-sm font-bold text-white/70">전체 문항 수</span>
@@ -658,11 +658,12 @@ function QuestionEditor({ token, room, state, busy, run, notify }: {
                     {!ok && <span className="text-xs text-white/50">진행됨</span>}
                   </div>
                   <div className="mt-2 grid gap-2 md:grid-cols-2">
-                    <input disabled={!ok} value={d.question_text} maxLength={QUESTION_LIMITS.question} onChange={(e) => edit(i, { question_text: e.target.value })} placeholder="질문" className={`${field} md:col-span-2`} />
-                    <input disabled={!ok} value={d.option_a} maxLength={QUESTION_LIMITS.option} onChange={(e) => edit(i, { option_a: e.target.value })} placeholder="A 보기" className={`${field} border-rose-400/40`} />
-                    <input disabled={!ok} value={d.option_b} maxLength={QUESTION_LIMITS.option} onChange={(e) => edit(i, { option_b: e.target.value })} placeholder="B 보기" className={`${field} border-sky-400/40`} />
-                    <input disabled={!ok} value={d.story_text} maxLength={QUESTION_LIMITS.storyText} onChange={(e) => edit(i, { story_text: e.target.value })} placeholder="스토리 설명 (선택)" className={`${field} md:col-span-2 text-sm`} />
+                    <input disabled={!ok} value={d.question_text} maxLength={QUESTION_LIMITS.question} onChange={(e) => edit(i, { question_text: e.target.value })} placeholder="질문" className={`${field} w-full md:col-span-2`} />
+                    <input disabled={!ok} value={d.option_a} maxLength={QUESTION_LIMITS.option} onChange={(e) => edit(i, { option_a: e.target.value })} placeholder="A 보기" className={`${field} w-full border-rose-400/40`} />
+                    <input disabled={!ok} value={d.option_b} maxLength={QUESTION_LIMITS.option} onChange={(e) => edit(i, { option_b: e.target.value })} placeholder="B 보기" className={`${field} w-full border-sky-400/40`} />
+                    <input disabled={!ok} value={d.story_text} maxLength={QUESTION_LIMITS.storyText} onChange={(e) => edit(i, { story_text: e.target.value })} placeholder="스토리 설명 (선택)" className={`${field} w-full md:col-span-2 text-sm`} />
                   </div>
+                  <ImagePicker disabled={!ok} value={d.image_url} onChange={(image_url) => edit(i, { image_url })} field={field} />
                   {err && <p className="mt-1 text-xs font-bold text-rose-300">{err}</p>}
                 </li>
               );
@@ -671,5 +672,61 @@ function QuestionEditor({ token, room, state, busy, run, notify }: {
         </>
       )}
     </section>
+  );
+}
+
+/** Big-screen picture of one question: a shipped picture, a web address, or none. */
+function ImagePicker({ value, onChange, disabled, field }: {
+  value: string;
+  onChange: (url: string) => void;
+  disabled: boolean;
+  field: string;
+}) {
+  const shipped = MATCH_IMAGES.some((m) => m.url === value);
+  const [custom, setCustom] = useState(!shipped && value !== '');
+  const [broken, setBroken] = useState(false);
+  useEffect(() => {
+    setBroken(false);
+    // follow the value when questions are reordered or reloaded
+    if (shipped) setCustom(false);
+    else if (value) setCustom(true);
+  }, [value, shipped]);
+  const mode = custom ? 'URL' : value || 'NONE';
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <span className="text-xs font-bold text-white/60">대형 스크린 그림</span>
+      <select
+        disabled={disabled}
+        value={mode}
+        onChange={(e) => {
+          const v = e.target.value;
+          setCustom(v === 'URL');
+          if (v === 'NONE') onChange('');
+          else if (v !== 'URL') onChange(v);
+          else if (shipped) onChange('');
+        }}
+        className={`${field} w-40 text-sm`}
+      >
+        <option value="NONE" className="bg-slate-800">그림 없음</option>
+        {MATCH_IMAGES.map((m) => <option key={m.url} value={m.url} className="bg-slate-800">{m.label}</option>)}
+        <option value="URL" className="bg-slate-800">다른 그림 (웹 주소)</option>
+      </select>
+      {custom && (
+        <input
+          disabled={disabled}
+          value={value}
+          maxLength={500}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://… 그림 주소"
+          className={`${field} min-w-[14rem] flex-1 text-sm`}
+        />
+      )}
+      {value && !broken ? (
+        <img src={value} alt="" onError={() => setBroken(true)} className="h-14 w-24 rounded-lg bg-black/30 object-cover ring-1 ring-white/15" />
+      ) : value ? (
+        <span className="text-xs font-bold text-rose-300">그림을 불러올 수 없습니다</span>
+      ) : null}
+    </div>
   );
 }
