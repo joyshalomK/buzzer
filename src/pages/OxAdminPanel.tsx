@@ -232,7 +232,7 @@ export function OxAdminPanel({ token, room, onAuthError, notify }: {
               </p>
               <label className="mt-3 flex items-center gap-2 text-sm font-bold text-white/70">
                 <input type="checkbox" checked={showSplit} onChange={(e) => setShowSplit(e.target.checked)} className="h-4 w-4 accent-sky-500" />
-                O/X 선택 분포 보기 (사회자 화면만)
+                O/X 선택 분포 보기
               </label>
               {showSplit && <SplitBar o={c.o ?? 0} x={c.x ?? 0} />}
             </>

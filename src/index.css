@@ -105,3 +105,82 @@ body {
   .sync-ring, .sync-orbit { animation-duration: 4s; }
   .confetti-piece { display: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   OX SURVIVAL stage: walking characters (transform/opacity only)
+   --------------------------------------------------------------------------- */
+.ox-avatar { display: block; width: 100%; height: auto; overflow: visible; }
+.ox-avatar g { transform-box: fill-box; }
+.ox-figure { transform-origin: 50% 100%; animation: ox-breathe 2.4s ease-in-out infinite; animation-delay: var(--ox-delay, 0s); }
+.ox-leg { transform-origin: 50% 0; }
+.ox-arm { transform-origin: 50% 8%; transition: transform 0.35s ease; }
+.ox-head { transform-origin: 50% 90%; transition: transform 0.35s ease; }
+
+@keyframes ox-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.025) translateY(-0.5px); } }
+@keyframes ox-step { 0% { transform: rotate(24deg); } 100% { transform: rotate(-24deg); } }
+@keyframes ox-swing { 0% { transform: rotate(-30deg); } 100% { transform: rotate(30deg); } }
+@keyframes ox-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+/* walk: legs and arms swing in opposite phase, the body bobs */
+.ox-avatar.walking .ox-figure { animation: ox-bob 0.26s ease-in-out infinite; }
+.ox-avatar.walking .ox-leg-l { animation: ox-step 0.26s ease-in-out infinite alternate; }
+.ox-avatar.walking .ox-leg-r { animation: ox-step 0.26s ease-in-out infinite alternate-reverse; }
+.ox-avatar.walking .ox-arm-l { animation: ox-swing 0.26s ease-in-out infinite alternate-reverse; }
+.ox-avatar.walking .ox-arm-r { animation: ox-swing 0.26s ease-in-out infinite alternate; }
+.ox-avatar.walking.mood-sad .ox-figure,
+.ox-avatar.walking.mood-sad .ox-leg,
+.ox-avatar.walking.mood-sad .ox-arm { animation-duration: 0.42s; }
+
+/* cheer: both arms up, jumping */
+@keyframes ox-jump { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-16%); } 60% { transform: translateY(-16%); } }
+.ox-avatar.mood-cheer:not(.walking) .ox-figure { animation: ox-jump 0.62s ease-in-out infinite; animation-delay: calc(var(--ox-delay, 0s) / 6); }
+.ox-avatar.mood-cheer .ox-arm-l, .ox-avatar.mood-champion .ox-arm-l { transform: rotate(150deg); }
+.ox-avatar.mood-cheer .ox-arm-r, .ox-avatar.mood-champion .ox-arm-r { transform: rotate(-150deg); }
+
+/* wave: one hand up and waving */
+@keyframes ox-wave { 0%, 100% { transform: rotate(-150deg); } 50% { transform: rotate(-115deg); } }
+.ox-avatar.mood-wave:not(.walking) .ox-arm-r { animation: ox-wave 0.7s ease-in-out infinite; }
+
+/* sad: head down, arms hanging, a little grey */
+.ox-avatar.mood-sad .ox-head { transform: translateY(5%) rotate(9deg); }
+.ox-avatar.mood-sad .ox-arm-l { transform: rotate(6deg); }
+.ox-avatar.mood-sad .ox-arm-r { transform: rotate(-6deg); }
+.ox-avatar.mood-sad { filter: saturate(0.55); }
+
+/* champion: big jumps */
+@keyframes ox-champ { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-22%) scale(1.04); } 55% { transform: translateY(-22%) scale(1.04); } }
+.ox-avatar.mood-champion:not(.walking) .ox-figure { animation: ox-champ 0.8s ease-in-out infinite; }
+@keyframes ox-crown-drop { 0% { transform: translateY(-260%); opacity: 0; } 70% { transform: translateY(8%); opacity: 1; } 100% { transform: none; opacity: 1; } }
+.ox-crown { animation: ox-crown-drop 0.9s cubic-bezier(0.3, 1.3, 0.5, 1) both; }
+
+/* one hop when arriving at the destination */
+@keyframes ox-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14%); } }
+.ox-hop { animation: ox-hop 0.36s ease-out; }
+
+/* a character on the stage: position is a GPU transform; facing flips the figure */
+.ox-char { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+/* turning is an instant flip: a scaleX transition would pass through a paper-thin frame */
+.ox-char.face-left .ox-facing { transform: scaleX(-1); }
+.ox-name {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+  font-weight: 900; line-height: 1.15; color: #fff;
+  background: rgba(10, 14, 40, 0.72); border-radius: 999px; padding: 0.08em 0.5em;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* zones */
+.ox-zone { transition: filter 0.6s ease, box-shadow 0.6s ease, opacity 0.6s ease; }
+.ox-zone.dim { filter: brightness(0.45) saturate(0.7); }
+@keyframes ox-glow { 0%, 100% { box-shadow: 0 0 0 0.5vmin rgba(255,255,255,0.9), 0 0 6vmin 1.5vmin var(--glow); } 50% { box-shadow: 0 0 0 0.8vmin #fff, 0 0 10vmin 3vmin var(--glow); } }
+.ox-zone.glow { filter: brightness(1.15); animation: ox-glow 1.1s ease-in-out infinite; }
+
+@keyframes ox-banner-in { 0% { transform: translateY(-30%) scale(0.85); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.ox-banner-in { animation: ox-banner-in 0.5s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+@keyframes ox-trophy { 0% { transform: translateY(40%) scale(0.2) rotate(-20deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.ox-trophy { animation: ox-trophy 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ox-figure, .ox-leg, .ox-arm { animation: none !important; }
+  .ox-zone.glow { animation: none; }
+}

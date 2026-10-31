@@ -480,6 +480,8 @@ export interface OxPublicState {
   survivors: string[];
   lobby: string[];
   winners: string[];
+  /** characters on the big-screen stage (see oxStage.ts) */
+  stage: Array<{ key: string; name: string; alive: boolean; pick: OxAnswer | null; correct: boolean | null }>;
   server_now_ms: number;
 }
 

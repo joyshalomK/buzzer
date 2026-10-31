@@ -1,6 +1,11 @@
 
  RUN  v5.0.5 /Users/allsense/Projects/Play/buzzer
 
+ ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > lobby and round ready 1ms
+ ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > only alive players get the buttons, only until the server deadline 0ms
+ ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > reveal messages 0ms
+ ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > finished, ended room, loading 0ms
+ ✓ |unit| tests/unit/oxView.test.ts > helpers > survival line and result titles 0ms
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > WAITING / READY are not pressable 1ms
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > ARMED is pressable exactly once per arming 0ms
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > excluded (cancelled winner) cannot press 0ms
@@ -8,12 +13,7 @@
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > disconnected disables the buzzer even when armed 0ms
  ✓ |unit| tests/unit/participantView.test.ts > deriveParticipantView > locked without winner, ended room, loading 0ms
  ✓ |unit| tests/unit/participantView.test.ts > nickname helpers > counts code points like Postgres char_length 0ms
- ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > lobby and round ready 1ms
- ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > only alive players get the buttons, only until the server deadline 0ms
- ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > reveal messages 0ms
- ✓ |unit| tests/unit/oxView.test.ts > deriveOxView > finished, ended room, loading 0ms
- ✓ |unit| tests/unit/oxView.test.ts > helpers > survival line and result titles 0ms
- ✓ |unit| tests/unit/matchView.test.ts > deriveMatchView > lobby: partner missing vs. both connected 2ms
+ ✓ |unit| tests/unit/matchView.test.ts > deriveMatchView > lobby: partner missing vs. both connected 1ms
  ✓ |unit| tests/unit/matchView.test.ts > deriveMatchView > buttons are enabled only while the question is open on the server clock 0ms
  ✓ |unit| tests/unit/matchView.test.ts > deriveMatchView > closed, reveal, finished and ended 0ms
  ✓ |unit| tests/unit/matchView.test.ts > helpers > verdict messages stay friendly 0ms
@@ -34,96 +34,106 @@
  ✓ |unit| tests/unit/syncView.test.ts > ServerClock > uses the midpoint of the fastest round trip 0ms
  ✓ |unit| tests/unit/syncView.test.ts > ServerClock > ignores invalid samples 0ms
  ✓ |unit| tests/unit/syncView.test.ts > syncResultsToCsv > writes one row per team with both records and the gap 0ms
- ✓ |unit| tests/unit/csv.test.ts > roundsToCsv > sorts by round, includes BOM, reaction time and escapes 10ms
- ✓ |db| tests/db/buzzer.test.ts > 1. 20 participants join concurrently > all 20 get unique ids and tokens; only hashes are stored 236ms
- ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > rejects a duplicate nickname (case-insensitive, trimmed) 2ms
- ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > exactly one of 8 simultaneous joins with the same nickname succeeds 105ms
- ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > validates length and empty nicknames 27ms
+ ✓ |unit| tests/unit/csv.test.ts > roundsToCsv > sorts by round, includes BOM, reaction time and escapes 9ms
+ ✓ |unit| tests/unit/oxStage.test.ts > characters > look is decided by the key only (same after a reload) 1ms
+ ✓ |unit| tests/unit/oxStage.test.ts > layout > a zone holds every character of the round without overlap, at 1920x1080, 1366x768 and 4K 20ms
+ ✓ |unit| tests/unit/oxStage.test.ts > layout > slots are stable: only the character that changes side moves 0ms
+ ✓ |unit| tests/unit/oxStage.test.ts > stage targets (from server state only) > waiting and answering 0ms
+ ✓ |unit| tests/unit/oxStage.test.ts > stage targets (from server state only) > reveal: tension, cheering, sad faces, walking off, then gone — as the server decided 0ms
+ ✓ |unit| tests/unit/oxStage.test.ts > stage targets (from server state only) > void round: nobody leaves, everybody comes back to the middle 0ms
+ ✓ |unit| tests/unit/oxStage.test.ts > stage targets (from server state only) > champion and joint winners 0ms
+ ✓ |db| tests/db/buzzer.test.ts > 1. 20 participants join concurrently > all 20 get unique ids and tokens; only hashes are stored 221ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > rejects a duplicate nickname (case-insensitive, trimmed) 1ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > exactly one of 8 simultaneous joins with the same nickname succeeds 99ms
+ ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > validates length and empty nicknames 26ms
  ✓ |db| tests/db/buzzer.test.ts > 2. Duplicate nicknames > a kicked participant frees the nickname 2ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > 10 phones buzzing at once => exactly one winner 130ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > stress: 40 rounds x 20 phones (each double-tapping) => one winner per round 523ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > winner holding its row lock (slow commit) still produces a single winner 2599ms
- ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > DB constraint rejects a second accepted attempt even if logic were bypassed 16ms
- ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > records a single attempt and returns the same outcome every time 99ms
- ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > a loser tapping repeatedly stays LOST (network retries are safe) 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > 10 phones buzzing at once => exactly one winner 131ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > stress: 40 rounds x 20 phones (each double-tapping) => one winner per round 539ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > winner holding its row lock (slow commit) still produces a single winner 2612ms
+ ✓ |db| tests/db/buzzer.test.ts > 3. Near-simultaneous buzzing > DB constraint rejects a second accepted attempt even if logic were bypassed 13ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > records a single attempt and returns the same outcome every time 93ms
+ ✓ |db| tests/db/buzzer.test.ts > 4. Same person taps 5 times > a loser tapping repeatedly stays LOST (network retries are safe) 3ms
  ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > WAITING and READY reject without recording anything 2ms
- ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > host lock with no winner => LOCKED, and re-arming works 3ms
- ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > late presses are LOST and cannot change the winner 5ms
+ ✓ |db| tests/db/buzzer.test.ts > 5. Buzz before the round is armed > host lock with no winner => LOCKED, and re-arming works 2ms
+ ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > late presses are LOST and cannot change the winner 4ms
  ✓ |db| tests/db/buzzer.test.ts > 6. Buzz after a winner is confirmed > host cannot re-arm a round that has a winner 2ms
- ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a buzz carrying the old round_id never affects the new round 3ms
- ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > race: buzzes on old round fired concurrently with NEXT+ARM 950ms
- ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a stale admin screen (double-click NEXT) cannot skip a round 2ms
- ✓ |db| tests/db/buzzer.test.ts > 8/9. Refresh and network switch (token based restore) > participant_sync restores identity and round state from a fresh connection 16ms
- ✓ |db| tests/db/buzzer.test.ts > 10. Admin refresh > admin session token survives a reload and returns full state 17ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a buzz carrying the old round_id never affects the new round 4ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > race: buzzes on old round fired concurrently with NEXT+ARM 885ms
+ ✓ |db| tests/db/buzzer.test.ts > 7. Delayed request from the previous round > a stale admin screen (double-click NEXT) cannot skip a round 1ms
+ ✓ |db| tests/db/buzzer.test.ts > 8/9. Refresh and network switch (token based restore) > participant_sync restores identity and round state from a fresh connection 15ms
+ ✓ |db| tests/db/buzzer.test.ts > 10. Admin refresh > admin session token survives a reload and returns full state 15ms
  ✓ |db| tests/db/buzzer.test.ts > Host tools > cancel win: winner removed, round can be re-armed, cancelled winner excluded 3ms
  ✓ |db| tests/db/buzzer.test.ts > Host tools > announce, end game, reset, test bots 9ms
  ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > forged / missing participant tokens are rejected 2ms
  ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > a participant token cannot buzz in another room 2ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > every admin RPC rejects forged, participant and missing tokens 410ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > wrong password fails and brute force is throttled 492ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > expired admin sessions and logout are enforced 199ms
- ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > anon cannot touch tables or private functions directly (RLS + grants) 132ms
- ✓ |db| tests/db/match.test.ts > M1–M3. scoring per question > same pick = 1, different pick = 0, one answer = 0, no answer = 0 17ms
- ✓ |db| tests/db/match.test.ts > M4. time limit on the server clock > rejects answers after the deadline, closes the question on the next read and keeps earlier answers 6ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > every admin RPC rejects forged, participant and missing tokens 412ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > wrong password fails and brute force is throttled 469ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > expired admin sessions and logout are enforced 194ms
+ ✓ |db| tests/db/buzzer.test.ts > 12. Forged tokens and unauthorised calls > anon cannot touch tables or private functions directly (RLS + grants) 120ms
+ ✓ |db| tests/db/match.test.ts > M1–M3. scoring per question > same pick = 1, different pick = 0, one answer = 0, no answer = 0 18ms
+ ✓ |db| tests/db/match.test.ts > M4. time limit on the server clock > rejects answers after the deadline, closes the question on the next read and keeps earlier answers 5ms
  ✓ |db| tests/db/match.test.ts > M4. time limit on the server clock > answers before OPEN are rejected 3ms
- ✓ |db| tests/db/match.test.ts > M5. changing the answer > the last answer counts; an overtaken older request cannot overwrite a newer one; retries are idempotent 6ms
- ✓ |db| tests/db/match.test.ts > M6. 10 questions > accumulates scores over all 10 questions and computes rate and rank 67ms
- ✓ |db| tests/db/match.test.ts > M7. fewer questions > a 3-question game ends after question 3 and uses 3 as the denominator 90ms
+ ✓ |db| tests/db/match.test.ts > M5. changing the answer > the last answer counts; an overtaken older request cannot overwrite a newer one; retries are idempotent 5ms
+ ✓ |db| tests/db/match.test.ts > M6. 10 questions > accumulates scores over all 10 questions and computes rate and rank 58ms
+ ✓ |db| tests/db/match.test.ts > M7. fewer questions > a 3-question game ends after question 3 and uses 3 as the denominator 85ms
  ✓ |db| tests/db/match.test.ts > M7. fewer questions > ending early: the denominator is the number of questions played 14ms
- ✓ |db| tests/db/match.test.ts > M8. ties > competition ranking (1, 1, 3), final reveal 3rd -> 1st, and a FAMILY SYNC final for the tied families 35ms
- ✓ |db| tests/db/match.test.ts > M9. new game / restart > a new game keeps the question set but none of the answers or scores 16ms
+ ✓ |db| tests/db/match.test.ts > M8. ties > competition ranking (1, 1, 3), final reveal 3rd -> 1st, and a FAMILY SYNC final for the tied families 33ms
+ ✓ |db| tests/db/match.test.ts > M9. new game / restart > a new game keeps the question set but none of the answers or scores 15ms
  ✓ |db| tests/db/match.test.ts > M9. new game / restart > restarting a question discards its answers 7ms
  ✓ |db| tests/db/match.test.ts > M9. new game / restart > a stale admin screen cannot skip a question (double click) 2ms
  ✓ |db| tests/db/match.test.ts > M13. pictures on the big screen > each question carries its picture; the editor can change it, reordering moves it, bad addresses are refused 73ms
- ✓ |db| tests/db/match.test.ts > M10. other modes are unaffected > buzzer and FAMILY SYNC still work in the same room; switching is blocked while a question is open 45ms
+ ✓ |db| tests/db/match.test.ts > M10. other modes are unaffected > buzzer and FAMILY SYNC still work in the same room; switching is blocked while a question is open 44ms
  ✓ |db| tests/db/match.test.ts > M10. other modes are unaffected > a full room reset restarts the match game and keeps the edited question set 11ms
- ✓ |db| tests/db/match.test.ts > M11. privacy > nobody sees a partner's pick before the reveal; answer tables are not readable 73ms
+ ✓ |db| tests/db/match.test.ts > M11. privacy > nobody sees a partner's pick before the reveal; answer tables are not readable 77ms
  ✓ |db| tests/db/match.test.ts > M11. privacy > cumulative standings on the screen only count revealed questions and stop before the last question 25ms
- ✓ |db| tests/db/match.test.ts > M12. concurrency, duplicates, reconnects > 20 phones answer at once while the host closes: every accepted answer is scored, nothing else 231ms
+ ✓ |db| tests/db/match.test.ts > M12. concurrency, duplicates, reconnects > 20 phones answer at once while the host closes: every accepted answer is scored, nothing else 227ms
  ✓ |db| tests/db/match.test.ts > M12. concurrency, duplicates, reconnects > reloading restores my answer; a second device with the same token updates the same answer 4ms
- ✓ |db| tests/db/match.test.ts > M12. concurrency, duplicates, reconnects > team limits, leaving and late families 44ms
- ✓ |db| tests/db/sync.test.ts > S1. 10 teams / 20 phones > 20 concurrent joins form 10 full teams, 20 concurrent presses are all recorded and ranked 241ms
- ✓ |db| tests/db/sync.test.ts > S2. Team size limit > a third member is rejected 3ms
- ✓ |db| tests/db/sync.test.ts > S2. Team size limit > 6 simultaneous joins to one family => exactly 2 succeed 81ms
- ✓ |db| tests/db/sync.test.ts > S2. Team size limit > family names are case-insensitive; duplicate label in a team is rejected; input is validated 39ms
- ✓ |db| tests/db/sync.test.ts > S2. Team size limit > kicking a member frees the slot; leaving is blocked while a round runs 18ms
- ✓ |db| tests/db/sync.test.ts > S3. Duplicate presses > the same participant pressing 5 times at once is recorded once 74ms
- ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press just before the deadline counts 5ms
- ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press after the deadline is rejected and not stored; the round auto-finishes 4ms
- ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press before the scheduled GO is rejected (not stored) and may be retried 3ms
+ ✓ |db| tests/db/match.test.ts > M12. concurrency, duplicates, reconnects > team limits, leaving and late families 43ms
+ ✓ |db| tests/db/sync.test.ts > S1. 10 teams / 20 phones > 20 concurrent joins form 10 full teams, 20 concurrent presses are all recorded and ranked 240ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > a third member is rejected 2ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > 6 simultaneous joins to one family => exactly 2 succeed 84ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > family names are case-insensitive; duplicate label in a team is rejected; input is validated 40ms
+ ✓ |db| tests/db/sync.test.ts > S2. Team size limit > kicking a member frees the slot; leaving is blocked while a round runs 19ms
+ ✓ |db| tests/db/sync.test.ts > S3. Duplicate presses > the same participant pressing 5 times at once is recorded once 75ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press just before the deadline counts 4ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press after the deadline is rejected and not stored; the round auto-finishes 3ms
+ ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > a press before the scheduled GO is rejected (not stored) and may be retried 2ms
  ✓ |db| tests/db/sync.test.ts > S4/S5. 10-second window enforced by the server > presses are refused before START and after the host stops the round 3ms
  ✓ |db| tests/db/sync.test.ts > S6. Incomplete teams > one press => PARTIAL (unranked), no press => NONE 4ms
  ✓ |db| tests/db/sync.test.ts > S7. Network loss / reload > a retry after a lost response is DUPLICATE; state restores from the token 2ms
  ✓ |db| tests/db/sync.test.ts > S7. Network loss / reload > a delayed request for a previous round is STALE_ROUND and never lands in the new one 3ms
- ✓ |db| tests/db/sync.test.ts > S8. Ties > equal gaps share a rank (1,1,3), no hidden tie-break; rematch limits the next round to the tied teams 7ms
+ ✓ |db| tests/db/sync.test.ts > S8. Ties > equal gaps share a rank (1,1,3), no hidden tie-break; rematch limits the next round to the tied teams 6ms
  ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > nothing is public before the reveal; ranks open 5th -> 1st step by step 11ms
  ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > the browser role cannot read teams, members or presses directly 35ms
  ✓ |db| tests/db/sync.test.ts > S9. Reveal & privacy > progress can be shown on the big screen when the host enables it 19ms
- ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > admin state is re-readable, double START is harmless, stale round ids are refused 26ms
- ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > every admin_sync RPC requires a valid admin session 88ms
- ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > sync reset removes teams and invalidates member tokens 20ms
- ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > test-mode bot families press through sync_buzz 24ms
- ✓ |db| tests/db/sync.test.ts > S11. Compatibility with the quiz buzzer > modes and identities stay separate 14ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > admin state is re-readable, double START is harmless, stale round ids are refused 27ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > every admin_sync RPC requires a valid admin session 83ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > sync reset removes teams and invalidates member tokens 18ms
+ ✓ |db| tests/db/sync.test.ts > S10. Admin refresh / stale screens / auth > test-mode bot families press through sync_buzz 23ms
+ ✓ |db| tests/db/sync.test.ts > S11. Compatibility with the quiz buzzer > modes and identities stay separate 13ms
  ✓ |db| tests/db/sync.test.ts > S11. Compatibility with the quiz buzzer > whole-room reset clears both games 4ms
  ✓ |db| tests/db/ox.test.ts > O0. lobby and roster > START freezes everyone online as ALIVE; latecomers and new nicknames only watch 30ms
  ✓ |db| tests/db/ox.test.ts > O0. lobby and roster > needs at least two players 3ms
  ✓ |db| tests/db/ox.test.ts > O1–O4. the secret answer > O and X answers grade correctly; OPEN is blocked until an answer is stored; locked once open 32ms
- ✓ |db| tests/db/ox.test.ts > O1–O4. the secret answer > O11. the answer key never reaches participants or the screen before the reveal 76ms
- ✓ |db| tests/db/ox.test.ts > O5–O8. survival > right answers advance; wrong and missing answers are eliminated and cannot answer later 37ms
- ✓ |db| tests/db/ox.test.ts > O9–O10. answering window > answers can change until the deadline; then they are frozen 13ms
- ✓ |db| tests/db/ox.test.ts > O9–O10. answering window > a close racing many answers counts each answer fully or not at all 370ms
- ✓ |db| tests/db/ox.test.ts > O12. everybody wrong > voids the round, keeps every survivor and replays the same round number 21ms
- ✓ |db| tests/db/ox.test.ts > O13–O14. winners > one survivor = champion: no more rounds, FINISH announces it 10ms
- ✓ |db| tests/db/ox.test.ts > O13–O14. winners > several survivors can be declared joint winners (also after a void round) 19ms
- ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > survival status is server state: reload / new connection gets it back 19ms
- ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > a double REVEAL / CLOSE does not grade twice; a stale screen cannot skip a round 9ms
- ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > only the host can change the game 3ms
+ ✓ |db| tests/db/ox.test.ts > O1–O4. the secret answer > O11. the answer key never reaches participants or the screen before the reveal 61ms
+ ✓ |db| tests/db/ox.test.ts > O5–O8. survival > right answers advance; wrong and missing answers are eliminated and cannot answer later 30ms
+ ✓ |db| tests/db/ox.test.ts > O9–O10. answering window > answers can change until the deadline; then they are frozen 12ms
+ ✓ |db| tests/db/ox.test.ts > O9–O10. answering window > a close racing many answers counts each answer fully or not at all 372ms
+ ✓ |db| tests/db/ox.test.ts > O12. everybody wrong > voids the round, keeps every survivor and replays the same round number 20ms
+ ✓ |db| tests/db/ox.test.ts > O13–O14. winners > one survivor = champion: no more rounds, FINISH announces it 13ms
+ ✓ |db| tests/db/ox.test.ts > O13–O14. winners > several survivors can be declared joint winners (also after a void round) 20ms
+ ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > survival status is server state: reload / new connection gets it back 21ms
+ ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > a double REVEAL / CLOSE does not grade twice; a stale screen cannot skip a round 10ms
+ ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > only the host can change the game 2ms
  ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > NEW_GAME starts a clean game; the old one keeps its own record 13ms
- ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > END stops the game; the time limit is applied when a round opens 10ms
+ ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > END stops the game; the time limit is applied when a round opens 9ms
  ✓ |db| tests/db/ox.test.ts > O15. reconnecting, repeated commands, new games > room reset restarts OX SURVIVAL; other modes are untouched by OX play 12ms
+ ✓ |db| tests/db/ox.test.ts > O-D. display stage (walking characters) > stage lists survivors with live picks, server verdicts after the reveal, and no raw ids 12ms
+ ✓ |db| tests/db/ox.test.ts > O-D. display stage (walking characters) > the next round brings back only the survivors; a void round keeps everyone 13ms
+ ✓ |db| tests/db/ox.test.ts > O-D. display stage (walking characters) > the lobby stage shows who would play 2ms
 
- Test Files  9 passed (9)
-      Tests  120 passed (120)
-   Start at  17:17:44
-   Duration  9.49s (tests 99%, import 1%)
+ Test Files  10 passed (10)
+      Tests  130 passed (130)
+   Start at  17:42:46
+   Duration  9.27s (tests 99%, import 1%)
 

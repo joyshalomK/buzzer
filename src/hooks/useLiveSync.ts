@@ -4,7 +4,7 @@ import { RpcError, supabase } from '../lib/supabase';
 import type { MatchGame, OxGame, Room, Round, SyncRound } from '../lib/types';
 
 export type RealtimeStatus = 'connecting' | 'live' | 'down';
-export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds' | 'family_match_games' | 'ox_games';
+export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds' | 'family_match_games' | 'ox_games' | 'ox_stage_moves';
 
 const DEFAULT_TABLES: LiveTable[] = ['rooms', 'rounds', 'sync_rounds'];
 

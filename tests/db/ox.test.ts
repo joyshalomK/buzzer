@@ -449,3 +449,74 @@ describe('O15. reconnecting, repeated commands, new games', () => {
     expect((await myState(a)).error).toBe('INVALID_TOKEN');
   });
 });
+
+describe('O-D. display stage (walking characters)', () => {
+  it('stage lists survivors with live picks, server verdicts after the reveal, and no raw ids', async () => {
+    const { room, players: [a, b, c] } = await started(3);
+    const stage = async () => (await publicState(room)).stage as Array<{ key: string; name: string; alive: boolean; pick: string | null; correct: boolean | null }>;
+    const by = async () => Object.fromEntries((await stage()).map((x) => [x.name, x]));
+
+    const ready = await stage();
+    expect(ready.map((x) => x.name)).toEqual(['ox1', 'ox2', 'ox3']);
+    expect(ready.every((x) => x.alive && x.pick === null && x.correct === null)).toBe(true);
+    // stable avatar key per participant, never the participant id itself
+    const keys = ready.map((x) => x.key);
+    expect(new Set(keys).size).toBe(3);
+    expect(keys.every((k) => /^[0-9a-f]{12}$/.test(k))).toBe(true);
+    expect(JSON.stringify(await publicState(room))).not.toContain(a.participant_id);
+
+    await setAnswer(room, 'O');
+    await act(room, 'OPEN');
+    const r = await roundId(room);
+    await answer(a, r, 'O');
+    await answer(b, r, 'O');
+    await answer(b, r, 'X'); // change of mind
+    let s = await by();
+    expect([s.ox1.pick, s.ox2.pick, s.ox3.pick]).toEqual(['O', 'X', null]);
+    expect(s.ox1.correct).toBeNull();
+    expect((await publicState(room)).round.correct_answer).toBeNull(); // picks public, answer key not
+
+    // one realtime move per stored answer, readable by the display (anon)
+    const moves = await anon.query('select avatar_key, pick from public.ox_stage_moves where round_id = $1 order by id', [r]);
+    expect(moves.rows.map((m) => m.pick)).toEqual(['O', 'O', 'X']);
+    expect(moves.rows[2].avatar_key).toBe(s.ox2.key);
+    // a stale retry does not emit a move
+    await answer(b, r, 'O', 1);
+    expect((await anon.query('select count(*)::int as n from public.ox_stage_moves where round_id = $1', [r])).rows[0].n).toBe(3);
+
+    await act(room, 'CLOSE');
+    await act(room, 'REVEAL');
+    s = await by();
+    expect(s.ox1).toMatchObject({ alive: true, correct: true });
+    expect(s.ox2).toMatchObject({ alive: false, correct: false, pick: 'X' });
+    expect(s.ox3).toMatchObject({ alive: false, correct: false, pick: null });
+    expect(s.ox1.key).toBe(keys[0]);
+
+    // the champion screen shows only the winner
+    await act(room, 'FINISH');
+    expect((await stage()).map((x) => x.name)).toEqual(['ox1']);
+    void c;
+  });
+
+  it('the next round brings back only the survivors; a void round keeps everyone', async () => {
+    const { room, players: [a, b, c, d] } = await started(4);
+    await play(room, 'X', [[a, 'X'], [b, 'X'], [c, 'O']]); // c, d out
+    await act(room, 'NEXT');
+    const st = (await publicState(room)).stage;
+    expect(st.map((x: any) => x.name)).toEqual(['ox1', 'ox2']);
+    expect(st.every((x: any) => x.pick === null && x.correct === null)).toBe(true);
+
+    await play(room, 'O', [[a, 'X'], [b, 'X']]);
+    const v = await publicState(room);
+    expect(v.game.status).toBe('ROUND_VOID');
+    expect(v.stage.map((x: any) => [x.name, x.alive, x.correct])).toEqual([['ox1', true, false], ['ox2', true, false]]);
+    void d;
+  });
+
+  it('the lobby stage shows who would play', async () => {
+    const room = await oxRoom();
+    await joinMany(anon, room.room_code, 2, 'lob');
+    const s = await publicState(room);
+    expect(s.stage.map((x: any) => x.name)).toEqual(['lob1', 'lob2']);
+  });
+});
