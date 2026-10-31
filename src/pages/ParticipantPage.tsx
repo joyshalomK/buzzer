@@ -13,6 +13,7 @@ import { KEYS, load, save } from '../lib/storage';
 import { RpcError, errorMessage, rpc } from '../lib/supabase';
 import type { BuzzResponse, ParticipantSession, ParticipantSync, Room, RoomMode, Round, SyncFailure, SyncSession } from '../lib/types';
 import { MatchPlayScreen } from './MatchPlayScreen';
+import { OxPlayScreen } from './OxPlayScreen';
 import { SyncPlayScreen } from './SyncPlayScreen';
 
 class SessionEnded extends Error {}
@@ -58,6 +59,19 @@ export function ParticipantPage() {
   if (effectiveMode === 'MATCH' && activeSync) {
     return <MatchPlayScreen key={activeSync.token} session={activeSync} onLeave={leaveSync} onMode={setMode} />;
   }
+  // OX SURVIVAL: everyone plays as an individual with the session this phone already has
+  const oxSession = active ?? activeSync;
+  if (effectiveMode === 'OX' && oxSession) {
+    return (
+      <OxPlayScreen
+        key={oxSession.token}
+        token={oxSession.token}
+        fallbackName={active ? active.nickname : `${activeSync!.team_name} ${activeSync!.label}`}
+        onLeave={active ? leaveBuzzer : leaveSync}
+        onMode={setMode}
+      />
+    );
+  }
   if (effectiveMode === 'BUZZER' && active) {
     return <PlayScreen key={active.token} session={active} onLeave={leaveBuzzer} onMode={setMode} />;
   }
@@ -101,6 +115,7 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
   // both family games use the same family team join
   const sync = mode === 'SYNC' || mode === 'MATCH';
   const match = mode === 'MATCH';
+  const ox = mode === 'OX';
 
   useEffect(() => {
     if (initialCode) return;
@@ -166,7 +181,11 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
 
   return (
     <main className="stage flex min-h-dvh flex-col items-center justify-center px-5 py-10">
-      {match ? (
+      {ox ? (
+        <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
+          OX<br /><span className="text-sky-300">SURVIVAL</span>
+        </h1>
+      ) : match ? (
         <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
           우리 가족<br /><span className="text-pink-300">이구동성</span>
         </h1>
@@ -180,7 +199,7 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
         </h1>
       )}
       <p className="mt-3 text-center text-lg text-white/70">
-        {sync ? '가족 2명이 같은 가족 닉네임으로 들어오세요!' : '닉네임을 쓰고 입장하세요!'}
+        {sync ? '가족 2명이 같은 가족 닉네임으로 들어오세요!' : ox ? '닉네임을 쓰고 입장하세요! 최후의 1인에 도전!' : '닉네임을 쓰고 입장하세요!'}
       </p>
 
       <form onSubmit={submit} className="mt-8 w-full max-w-sm space-y-5">

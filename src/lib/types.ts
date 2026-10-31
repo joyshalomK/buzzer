@@ -1,6 +1,6 @@
 export type RoundStatus = 'WAITING' | 'READY' | 'ARMED' | 'LOCKED' | 'FINISHED';
 export type RoomStatus = 'OPEN' | 'ENDED';
-export type RoomMode = 'BUZZER' | 'SYNC' | 'MATCH';
+export type RoomMode = 'BUZZER' | 'SYNC' | 'MATCH' | 'OX';
 
 export interface Room {
   id: string;
@@ -376,4 +376,152 @@ export interface MatchAnswerResponse {
   question_id?: string;
   /** the answer stored on the server after this request */
   option?: MatchOption | null;
+}
+
+// ---------------------------------------------------------------------------
+// OX SURVIVAL MODE (questions are read aloud; only answers are stored)
+
+export type OxGameStatus =
+  | 'LOBBY' | 'ROUND_READY' | 'ANSWERING' | 'ANSWER_CLOSED' | 'RESULT_REVEALED' | 'ROUND_VOID' | 'FINISHED';
+export type OxRoundStatus = 'READY' | 'ANSWERING' | 'CLOSED' | 'REVEALED' | 'VOID';
+export type OxAnswer = 'O' | 'X';
+export type OxResult = 'CHAMPION' | 'CO_WINNERS' | 'ENDED';
+export type OxSurvival = 'ALIVE' | 'ELIMINATED';
+
+export interface OxGame {
+  id: string;
+  room_id: string;
+  game_number: number;
+  status: OxGameStatus;
+  current_round: number;
+  current_round_id: string | null;
+  time_limit_seconds: number;
+  initial_participant_count: number | null;
+  result: OxResult | null;
+  rev: number;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+}
+
+export interface OxRound {
+  id: string;
+  seq: number;
+  round_number: number;
+  status: OxRoundStatus;
+  duration_seconds: number | null;
+  /** the host stored an answer (the answer itself only for the host / after the reveal) */
+  answer_set: boolean;
+  correct_answer: OxAnswer | null;
+  started_ms: number | null;
+  deadline_ms: number | null;
+  closed_ms: number | null;
+  revealed_ms: number | null;
+  survivors_before: number | null;
+  survivors_after: number | null;
+  correct_count: number | null;
+  o_count: number | null;
+  x_count: number | null;
+}
+
+export interface OxCounts {
+  initial: number | null;
+  alive: number;
+  eliminated: number;
+  answered: number;
+  /** host only */
+  o: number | null;
+  x: number | null;
+  /** lobby: participants START would register */
+  candidates: number | null;
+}
+
+export type OxRole = 'CANDIDATE' | 'PLAYER' | 'SPECTATOR';
+
+export interface OxParticipantState {
+  ok: true;
+  me: {
+    participant_id: string;
+    name: string;
+    role: OxRole;
+    status: OxSurvival | null;
+    eliminated_round: number | null;
+    answer: OxAnswer | null;
+    seq: number | null;
+    rank: number | null;
+  };
+  /** my verdict in the current round, once revealed */
+  verdict: { selected: OxAnswer | null; correct: boolean } | null;
+  room: Room;
+  game: OxGame | null;
+  round: OxRound | null;
+  counts: OxCounts;
+  winners: string[];
+  server_now_ms: number;
+}
+
+export type OxAnswerResult =
+  | 'ACCEPTED' | 'STALE' | 'NOT_OPEN' | 'TOO_LATE' | 'CLOSED' | 'STALE_ROUND' | 'NOT_PLAYING' | 'ELIMINATED'
+  | 'INVALID_ANSWER' | 'INVALID_TOKEN' | 'KICKED';
+
+export interface OxAnswerResponse {
+  ok: boolean;
+  result: OxAnswerResult;
+  round_id?: string;
+  /** the answer stored on the server after this request */
+  answer?: OxAnswer | null;
+}
+
+export interface OxPublicState {
+  room: Room;
+  game: OxGame | null;
+  round: OxRound | null;
+  counts: OxCounts;
+  survivors: string[];
+  lobby: string[];
+  winners: string[];
+  server_now_ms: number;
+}
+
+export interface OxAdminPlayer {
+  participant_id: string;
+  name: string;
+  status: OxSurvival;
+  eliminated_round: number | null;
+  is_test: boolean;
+  online: boolean;
+  answered: boolean;
+  selected: OxAnswer | null;
+}
+
+export interface OxVerdict {
+  participant_id: string;
+  name: string;
+  selected: OxAnswer | null;
+  correct: boolean;
+}
+
+export interface OxRankRow {
+  participant_id: string;
+  name: string;
+  status: OxSurvival;
+  eliminated_round: number | null;
+  rank: number;
+}
+
+export interface OxAdminState {
+  room: Room;
+  game: OxGame | null;
+  round: OxRound | null;
+  counts: OxCounts;
+  candidates: Array<{ participant_id: string; name: string; kind: 'BUZZER' | 'SYNC'; is_test: boolean; online: boolean }>;
+  players: OxAdminPlayer[];
+  verdicts: OxVerdict[];
+  rounds: Array<OxRound & { eliminated_names: string[] }>;
+  ranking: OxRankRow[];
+  games: Array<{
+    id: string; game_number: number; status: OxGameStatus; current_round: number;
+    initial_participant_count: number | null; result: OxResult | null; finished_at: string | null; winners: string[];
+  }>;
+  server_now_ms: number;
 }

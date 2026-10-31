@@ -10,6 +10,7 @@ import { sfx, unlockAudio } from '../lib/sound';
 import { errorMessage, publicBaseUrl, rpc } from '../lib/supabase';
 import type { PublicState } from '../lib/types';
 import { MatchDisplay } from './MatchDisplay';
+import { OxDisplay } from './OxDisplay';
 import { SyncDisplay } from './SyncDisplay';
 
 /** Read-only big-screen view. Needs no credentials at all. */
@@ -55,6 +56,7 @@ export function DisplayPage() {
 
   if (s.room.mode === 'SYNC') return <SyncDisplay code={s.room.room_code} />;
   if (s.room.mode === 'MATCH') return <MatchDisplay code={s.room.room_code} />;
+  if (s.room.mode === 'OX') return <OxDisplay code={s.room.room_code} />;
 
   const status = s.room.status === 'ENDED' ? 'ENDED' : round?.status;
   const headline =

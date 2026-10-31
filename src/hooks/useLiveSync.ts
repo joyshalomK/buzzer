@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { RpcError, supabase } from '../lib/supabase';
-import type { MatchGame, Room, Round, SyncRound } from '../lib/types';
+import type { MatchGame, OxGame, Room, Round, SyncRound } from '../lib/types';
 
 export type RealtimeStatus = 'connecting' | 'live' | 'down';
-export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds' | 'family_match_games';
+export type LiveTable = 'rooms' | 'rounds' | 'sync_rounds' | 'family_match_games' | 'ox_games';
 
 const DEFAULT_TABLES: LiveTable[] = ['rooms', 'rounds', 'sync_rounds'];
 
@@ -14,7 +14,7 @@ export interface LiveSyncOptions<T> {
   /** fetches authoritative state from the server */
   fetcher: () => Promise<T>;
   /** called for every realtime row change (before the debounced re-fetch) */
-  onChange?: (change: RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame>, table: LiveTable) => void;
+  onChange?: (change: RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame | OxGame>, table: LiveTable) => void;
   /** tables to subscribe to (all filtered to this room) */
   tables?: LiveTable[];
   /** re-fetch period while realtime is healthy (safety net) */
@@ -126,7 +126,7 @@ export function useLiveSync<T>({
         'postgres_changes',
         { event: '*', schema: 'public', table, filter: table === 'rooms' ? `id=eq.${roomId}` : `room_id=eq.${roomId}` },
         (p) => {
-          onChangeRef.current?.(p as RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame>, table);
+          onChangeRef.current?.(p as RealtimePostgresChangesPayload<Room | Round | SyncRound | MatchGame | OxGame>, table);
           // spread participant re-syncs out a little when 20 phones get the same room event
           scheduleRefresh(table === 'rooms' ? 150 + Math.random() * 600 : 120);
         },

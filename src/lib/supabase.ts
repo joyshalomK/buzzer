@@ -91,6 +91,10 @@ const MESSAGES: Record<string, string> = {
   QUESTION_TEXT_TOO_LONG: '질문은 100자 이내로 입력해 주세요.',
   OPTION_REQUIRED: '모든 문항의 A/B 보기를 입력해 주세요.',
   OPTION_TOO_LONG: '보기는 40자 이내로 입력해 주세요.',
+  NOT_ENOUGH_PLAYERS: '접속 중인 참가자가 2명 이상이어야 시작할 수 있습니다.',
+  ANSWER_REQUIRED: '이번 라운드의 정답(O/X)을 먼저 저장해 주세요.',
+  ANSWER_LOCKED: '응답이 시작된 뒤에는 정답을 바꿀 수 없습니다.',
+  INVALID_ANSWER: '정답은 O 또는 X 중에서 골라 주세요.',
 };
 
 export function errorMessage(e: unknown): string {
