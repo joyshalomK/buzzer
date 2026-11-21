@@ -67,7 +67,7 @@ export function DisplayPage() {
       {celebrate > 0 && <Confetti key={celebrate} count={160} />}
       <header className="flex items-start justify-between">
         <div>
-          <p className="font-display text-[5vmin] leading-none text-amber-300">FM FAMILY QUIZ</p>
+          <p className="font-display text-[5vmin] leading-none text-amber-300">QUIZ BUZZER</p>
           <p className="mt-2 text-[2.6vmin] font-bold text-white/70">
             ROUND {round?.round_number ?? '-'} · 참가자 {s.participant_count}명
           </p>

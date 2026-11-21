@@ -109,7 +109,7 @@ function AdminLogin({ onLogin }: { onLogin: (s: AdminSession) => void }) {
     <main className="stage flex min-h-dvh items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-3xl bg-white/5 p-8 ring-1 ring-white/10">
         <h1 className="font-display text-3xl text-amber-300">사회자 로그인</h1>
-        <p className="text-sm text-white/60">FM Family Quiz Buzzer 관리자 화면입니다.</p>
+        <p className="text-sm text-white/60">Quiz Buzzer 관리자 화면입니다.</p>
         <input
           type="password"
           value={password}
@@ -162,7 +162,7 @@ function RoomPicker({ token, onPick, onLogout, onAuthError }: {
     <main className="stage min-h-dvh px-6 py-10">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between">
-          <h1 className="font-display text-3xl text-amber-300">FM Family Quiz Buzzer</h1>
+          <h1 className="font-display text-3xl text-amber-300">Quiz Buzzer</h1>
           <button onClick={onLogout} className="btn btn-ghost">로그아웃</button>
         </div>
         <button onClick={create} disabled={busy} className="btn btn-green mt-8 w-full py-5 text-2xl">
@@ -367,9 +367,9 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
 
       {/* ---------- top bar ---------- */}
       <header className="flex flex-wrap items-center gap-4 rounded-3xl bg-white/5 p-4 ring-1 ring-white/10">
-        <QrCode text={joinUrl} size={112} downloadName={`fm-quiz-${roomCode}-qr.png`} />
+        <QrCode text={joinUrl} size={112} downloadName={`quiz-${roomCode}-qr.png`} />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl text-amber-300 lg:text-3xl">FM Family Quiz Buzzer</h1>
+          <h1 className="font-display text-2xl text-amber-300 lg:text-3xl">Quiz Buzzer</h1>
           <p className="mt-1 text-white/70">
             방 코드 <span className="font-display text-3xl tracking-[0.25em] text-white">{room.room_code}</span>
             {room.status === 'ENDED' && <span className="ml-2 rounded-full bg-slate-600 px-2 py-0.5 text-sm">종료됨</span>}
@@ -539,7 +539,7 @@ function Dashboard({ token, roomCode, onLeaveRoom, onLogout }: {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-black">라운드별 우승 기록 ({winnerRounds.length})</h2>
             <button
-              onClick={() => downloadCsv(`fm-quiz-${roomCode}-winners.csv`, roundsToCsv(state.rounds))}
+              onClick={() => downloadCsv(`quiz-${roomCode}-winners.csv`, roundsToCsv(state.rounds))}
               disabled={state.rounds.length === 0}
               className="btn btn-ghost text-sm"
             >

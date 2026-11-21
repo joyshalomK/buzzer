@@ -195,7 +195,7 @@ function JoinForm({ initialCode, mode, onMode, notice, onJoined, onSyncJoined }:
         </h1>
       ) : (
         <h1 className="font-display text-center text-5xl leading-none text-white drop-shadow">
-          FM FAMILY<br /><span className="text-amber-300">QUIZ</span>
+          QUIZ<br /><span className="text-amber-300">BUZZER</span>
         </h1>
       )}
       <p className="mt-3 text-center text-lg text-white/70">
@@ -440,7 +440,7 @@ function PlayScreen({ session, onLeave, onMode }: {
 
       <header className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-display text-xl leading-tight tracking-wide text-amber-300">FM FAMILY QUIZ</p>
+          <p className="font-display text-xl leading-tight tracking-wide text-amber-300">QUIZ BUZZER</p>
           <p className="truncate text-lg font-black text-white">{session.nickname}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

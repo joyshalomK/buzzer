@@ -316,7 +316,7 @@ export function MatchAdminPanel({ token, room, onAuthError, notify, onRoom }: {
               {status === 'QUESTION_CLOSED' && <span className="text-sm font-bold text-white/50">(사회자만 보임)</span>}
             </h2>
             <button
-              onClick={() => q && downloadCsv(`fm-match-${room.room_code}-g${game.game_number}-q${q.question_number}.csv`, matchVerdictsToCsv(q.question_number, s.results))}
+              onClick={() => q && downloadCsv(`match-${room.room_code}-g${game.game_number}-q${q.question_number}.csv`, matchVerdictsToCsv(q.question_number, s.results))}
               disabled={!q || s.results.length === 0}
               className="btn btn-ghost text-sm"
             >
@@ -398,7 +398,7 @@ export function MatchAdminPanel({ token, room, onAuthError, notify, onRoom }: {
             </span>
           </h2>
           <button
-            onClick={() => downloadCsv(`fm-match-${room.room_code}-g${game.game_number}-final.csv`, matchFinalToCsv(game.game_number, s.final))}
+            onClick={() => downloadCsv(`match-${room.room_code}-g${game.game_number}-final.csv`, matchFinalToCsv(game.game_number, s.final))}
             disabled={s.final.length === 0}
             className="btn btn-ghost text-sm"
           >
